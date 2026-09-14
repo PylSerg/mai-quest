@@ -26,7 +26,7 @@
 		<button
 			class="btn-round"
 			onclick={() => location.reload()}
-			title="Перезавантажити сторінку">⭮</button
+			title="Перезавантажити сторінку">🔄</button
 		>
 	</div>
 </div>
