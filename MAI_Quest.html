@@ -1,0 +1,2914 @@
+<!DOCTYPE html>
+<html lang="uk-UA">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SAI Quests</title>
+    <style>
+        :root {
+            --bg-color: #121214;
+            --panel-bg: #1e1e24;
+            --accent-color: #7257fa;
+            --accent-hover: #5d42e2;
+            --text-color: #e2e2e8;
+            --text-dim: #a0a0b0;
+            --border-color: #2e2e38;
+            --user-msg-bg: #2a2a36;
+            --ai-msg-bg: #181820;
+            --card-bg: #252530;
+            --input-bg: #282832;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f4f4f8;
+            --panel-bg: #ffffff;
+            --accent-color: #6246ea;
+            --accent-hover: #4c35c3;
+            --text-color: #2b2c34;
+            --text-dim: #6c757d;
+            --border-color: #dcdce6;
+            --user-msg-bg: #e8e6f8;
+            --ai-msg-bg: #ffffff;
+            --card-bg: #f8f9fa;
+            --input-bg: #f0f0f5;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) var(--panel-bg);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--panel-bg);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        html,
+        body {
+            height: 100%;
+            height: 100dvh;
+            width: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            display: flex;
+            position: relative;
+        }
+
+        /* Sidebar */
+        #sidebar {
+            width: 380px;
+            height: 100%;
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            transition: margin-left 0.3s ease, transform 0.3s ease;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        #sidebar.collapsed {
+            margin-left: -380px;
+        }
+
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header-body {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow: hidden;
+            max-height: 500px;
+            opacity: 1;
+            transition: max-height 0.3s ease, opacity 0.25s ease, margin-top 0.3s ease;
+        }
+
+        .sidebar-header-body.collapsed {
+            max-height: 0;
+            opacity: 0;
+            margin-top: -10px;
+            pointer-events: none;
+        }
+
+        .sidebar-content {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Main Chat Area */
+        #main-chat {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-color);
+            min-width: 0;
+            position: relative;
+        }
+
+        .chat-header {
+            padding: 12px 20px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            height: 60px;
+        }
+
+        .chat-header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .chat-header h2 {
+            font-size: 18px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-round {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            padding: 0;
+            cursor: pointer;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        .btn-round:hover {
+            border-color: var(--accent-color);
+        }
+
+        .chat-messages-wrapper {
+            position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-height: 0;
+        }
+
+        .btn-scroll-bottom {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            color: var(--accent-color);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(12px) scale(0.9);
+            transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, color 0.2s, border-color 0.2s;
+        }
+
+        .btn-scroll-bottom.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+
+        .btn-scroll-bottom:hover {
+            background: var(--accent-color);
+            color: #ffffff;
+            border-color: var(--accent-color);
+        }
+
+        /* Generation Status & Spinner Bar */
+        #statusContainer {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 8px;
+            background: var(--panel-bg);
+            border-top: 1px solid var(--border-color);
+            font-size: 13px;
+            color: var(--accent-color);
+            font-weight: 500;
+        }
+
+        #statusContainer.active {
+            display: flex;
+        }
+
+        .pulse-loader {
+            display: flex;
+            gap: 6px;
+        }
+
+        .pulse-loader span {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            animation: pulse 1.2s infinite ease-in-out;
+        }
+
+        .pulse-loader span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .pulse-loader span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0.6);
+                opacity: 0.4;
+            }
+
+            40% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        .chat-input-area {
+            padding: 12px 15px;
+            background: var(--panel-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .input-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Action Buttons & Options Container */
+        .ai-action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .ai-action-btn {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            font-weight: normal;
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 16px;
+        }
+
+        .ai-action-btn:hover {
+            border-color: var(--accent-color);
+            background: var(--panel-bg);
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .option-pill {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-style: italic;
+            cursor: pointer;
+            text-align: left;
+            hyphens: auto;
+            white-space: pre-wrap;
+            transition: all 0.2s;
+        }
+
+        .option-pill:hover {
+            border-color: var(--accent-color);
+            transform: translateX(3px);
+        }
+
+        /* Mobile Overlay */
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(2px);
+            z-index: 90;
+        }
+
+        /* Form Inputs */
+        input,
+        select,
+        textarea,
+        button {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--accent-color);
+            outline: none;
+        }
+
+        button {
+            background: var(--accent-color);
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+            color: white;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+
+        button.danger {
+            background: #d93838;
+        }
+
+        button.danger:hover {
+            background: #b82525;
+        }
+
+        .btn-toggle-sidebar {
+            padding: 6px 12px;
+            font-size: 18px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        /* Collapsible Character Cards */
+        details.char-details {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px;
+            background: var(--panel-bg);
+        }
+
+        details.char-details summary {
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            list-style: none;
+        }
+
+        details.char-details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .char-details-body {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Message Styling */
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            max-width: 90%;
+            line-height: 1.5;
+            word-break: break-word;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 17px;
+            position: relative;
+        }
+
+        .message.user {
+            background: var(--user-msg-bg);
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+            border: 1px solid var(--border-color);
+        }
+
+        .message.narration {
+            background: var(--ai-msg-bg);
+            border-left: 3px solid var(--accent-color);
+            align-self: flex-start;
+            width: 100%;
+            font-style: normal;
+            font-size: 18px;
+            color: var(--text-color);
+            text-align: left;
+            hyphens: auto;
+            overflow-wrap: break-word;
+            word-spacing: normal;
+            white-space: pre-wrap;
+        }
+
+        .message.character {
+            background: var(--ai-msg-bg);
+            border: 1px solid var(--border-color);
+            align-self: flex-start;
+        }
+
+        .char-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 8px;
+        }
+
+        .user-header {
+            justify-content: flex-end;
+        }
+
+        .char-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #333;
+            flex-shrink: 0;
+            border: 2px solid var(--accent-color);
+        }
+
+        .avatar-wrap {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+        }
+
+        .avatar-wrap .char-avatar {
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+
+        .avatar-wrap.loading .char-avatar {
+            opacity: 0;
+        }
+
+        .avatar-wrap .avatar-spinner {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            opacity: 0;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+
+        .avatar-wrap.loading .avatar-spinner {
+            opacity: 1;
+            animation: avatarSpin 0.8s linear infinite;
+        }
+
+        @keyframes avatarSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .char-name {
+            font-weight: bold;
+            color: var(--accent-color);
+            font-size: 15px;
+        }
+
+        .message.user .char-name {
+            color: var(--text-color);
+        }
+
+        /* Relationship Badges (0-100%) */
+        .rel-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            line-height: 1.2;
+            vertical-align: middle;
+            user-select: none;
+        }
+
+        .rel-badge.rel-love {
+            color: #ff6b9d;
+            border-color: rgba(255, 107, 157, 0.35);
+            background: rgba(255, 107, 157, 0.12);
+        }
+
+        .rel-badge.rel-friend {
+            color: #4ade80;
+            border-color: rgba(74, 222, 128, 0.35);
+            background: rgba(74, 222, 128, 0.12);
+        }
+
+        .rel-badge.rel-friendly {
+            color: #2dd4bf;
+            border-color: rgba(45, 212, 191, 0.35);
+            background: rgba(45, 212, 191, 0.12);
+        }
+
+        .rel-badge.rel-neutral {
+            color: #94a3b8;
+            border-color: rgba(148, 163, 184, 0.35);
+            background: rgba(148, 163, 184, 0.12);
+        }
+
+        .rel-badge.rel-suspicious {
+            color: #fbbf24;
+            border-color: rgba(251, 191, 36, 0.35);
+            background: rgba(251, 191, 36, 0.12);
+        }
+
+        .rel-badge.rel-hostile {
+            color: #f87171;
+            border-color: rgba(248, 113, 113, 0.35);
+            background: rgba(248, 113, 113, 0.12);
+        }
+
+        .rel-badge.rel-hate {
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.2);
+            font-weight: bold;
+        }
+
+        .char-text {
+            font-size: 18px;
+            text-align: left;
+            hyphens: auto;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+            word-spacing: 0px;
+        }
+
+        .btn-edit-msg {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            opacity: 0.6;
+            padding: 2px 5px;
+        }
+
+        .btn-edit-msg:hover {
+            opacity: 1;
+        }
+
+        .btn-send {
+            width: 44px !important;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            flex-shrink: 0;
+            align-self: flex-end;
+        }
+
+        .btn-send svg {
+            margin-left: 3px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .row>select {
+            flex: 1;
+            min-width: 0;
+        }
+
+        @media (max-width: 768px) {
+            #sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                width: 85%;
+                max-width: 340px;
+                transform: translateX(-100%);
+                margin-left: 0 !important;
+                box-shadow: 4px 0 15px rgba(0, 0, 0, 0.5);
+            }
+
+            #sidebar.open {
+                transform: translateX(0);
+            }
+
+            #sidebar-overlay.active {
+                display: block;
+            }
+
+            .message {
+                max-width: 95%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <div class="row" style="justify-content: space-between;">
+                <strong>sAI Quests</strong>
+                <div class="row" style="gap: 6px;">
+                    <button class="btn-round" onclick="toggleTheme()" id="themeToggleBtn"
+                        title="Переключити тему">☀️</button>
+                    <button class="btn-round" onclick="toggleSidebarHeader()" id="sidebarHeaderToggleBtn"
+                        title="Згорнути/розгорнути панель">▲</button>
+                </div>
+            </div>
+
+            <div id="sidebarHeaderBody" class="sidebar-header-body">
+                <div class="form-group">
+                    <label>Gemini API Key</label>
+                    <input type="password" id="apiKey" placeholder="Введи свій API Key..." oninput="saveApiKey(this.value)">
+                </div>
+
+                <div class="form-group">
+                    <label>Модель Gemini</label>
+                    <select id="modelSelect" onchange="saveSelectedModel(this.value)">
+                        <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
+                        <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                        <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+                        <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
+                        <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+                    </select>
+                </div>
+
+                <div class="row">
+                    <select id="gameSelect" onchange="loadSelectedGame()"></select>
+                    <button onclick="createNewGame()" title="Створити гру">+</button>
+                    <button onclick="exportCurrentGame()" title="Експорт у JSON">💾</button>
+                    <button onclick="document.getElementById('importFileInput').click()" title="Імпорт з JSON">📥</button>
+                    <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importGame(this)">
+                    <button class="danger" onclick="deleteCurrentGame()" title="Видалити гру">🗑</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-content" id="gameStatePanel" style="display: none;">
+            <!-- Current Day & Time of Day -->
+            <div class="card">
+                <div class="card-header">📅 Поточний день та час</div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>Поточний день</label>
+                    <div id="stateDayDisplay"
+                        style="font-size: 15px; font-weight: 700; padding: 8px 12px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; text-align: center; color: var(--text-color);">
+                        День 1</div>
+                </div>
+                <div class="form-group">
+                    <label>Час доби</label>
+                    <select id="stateTimeOfDay" onchange="updateGameState(); syncTimeOfDayButton();">
+                        <option value="Ранок">🌅 Ранок</option>
+                        <option value="День">☀️ День</option>
+                        <option value="Вечір">🌆 Вечір</option>
+                        <option value="Ніч">🌙 Ніч</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- World Settings -->
+            <div class="card">
+                <div class="card-header">🌍 Оточення та Світ</div>
+                <div class="form-group">
+                    <label>Назва локації</label>
+                    <input type="text" id="stateLocationName" placeholder="Назва поточної локації" onchange="updateGameState()">
+                </div>
+                <div class="form-group">
+                    <label>Опис локації</label>
+                    <textarea rows="4" id="stateLocationDescription" placeholder="Детальний опис поточної локації" onchange="updateGameState()"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Сеттинг / атмосфера</label>
+                    <input type="text" id="stateSetting" placeholder="наприклад: середньовіччя, кіберпанк, космос" onchange="updateGameState()">
+                </div>
+            </div>
+
+            <!-- Objectives -->
+            <div class="card">
+                <div class="card-header">🎯 Цілі квесту</div>
+                <textarea id="stateObjectives" rows="4" onchange="updateGameState()"></textarea>
+            </div>
+
+            <!-- Memory Log -->
+            <div class="card">
+                <div class="card-header">🧠 Пам'ять квесту</div>
+                <textarea id="stateMemory" rows="4"
+                    placeholder="• День 1, Ранок, Запорошена таверна: Основні моменти..."
+                    onchange="updateGameState()"></textarea>
+            </div>
+
+            <!-- Character Selection -->
+            <div class="card">
+                <div class="card-header">🎭 Ваш гравець</div>
+                <select id="playerCharSelect" onchange="updateGameState()"></select>
+            </div>
+
+            <!-- Characters Manager -->
+            <div class="card">
+                <div class="card-header">
+                    👥 Персонажі
+                    <button style="padding: 2px 8px;" onclick="addNewCharacter()">+</button>
+                </div>
+                <div id="charactersList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+
+            <!-- Locations Manager -->
+            <div class="card">
+                <div class="card-header">
+                    📍 Локації
+                    <button style="padding: 2px 8px;" onclick="addNewLocation()">+</button>
+                </div>
+                <div id="locationsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CHAT -->
+    <div id="main-chat">
+        <div class="chat-header">
+            <div class="chat-header-title">
+                <button class="btn-toggle-sidebar" onclick="toggleSidebar()" title="Меню">☰</button>
+                <h2 id="currentGameTitle">Оберіть або створіть гру</h2>
+            </div>
+            <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
+                <span id="headerDayBadge" title="Поточний день"
+                    style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 14px; background: var(--input-bg); border: 1px solid var(--border-color); white-space: nowrap;">День
+                    1</span>
+                <span id="headerTimeBadge" title="Поточний час доби"
+                    style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 14px; background: var(--input-bg); border: 1px solid var(--border-color); white-space: nowrap;">☀️
+                    День</span>
+                <button class="btn-round" id="reloadPageBtn" onclick="location.reload()"
+                    title="Перезавантажити сторінку">🔄</button>
+            </div>
+        </div>
+
+        <div class="chat-messages-wrapper">
+            <div class="chat-messages" id="chatMessages"></div>
+            <button id="scrollToBottomBtn" class="btn-scroll-bottom" onclick="scrollToBottomSmooth()"
+                title="Прокрутити донизу">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- GENERATION SPINNER (Relocated above input) -->
+        <div id="statusContainer">
+            <div class="pulse-loader">
+                <span></span><span></span><span></span>
+            </div>
+            <span id="statusText">Gemini створює відповідь...</span>
+        </div>
+
+        <div class="chat-input-area">
+            <div class="input-controls">
+                <textarea id="userInput" rows="1" style="flex: 1; resize: none; overflow-y: auto; font-size: 18px;"
+                    placeholder="Що ти робиш або кажеш?..." disabled></textarea>
+                <button class="btn-send" id="sendBtn" onclick="sendMessage()" title="Надіслати" disabled>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================
+           0. PRESETS & INITIALIZATION
+           ========================================== */
+        const SCENARIOS_PRESETS = [
+            {
+                title: "Таємниця закинутої таверни",
+                setting: "medieval fantasy",
+                day: 1,
+                locationName: "Запорошена таверна «Чорний Круг»",
+                locationDescription: "Стара напівзруйнована таверна на краю селища. Усередині пахне сирою деревиною, пилом і згаслим вогнищем; це тимчасовий прихисток під час негоди.",
+                location: "Запорошена таверна «Чорний Круг»",
+                timeOfDay: "Ніч",
+                objectives: "Знайти зашифровану карту до старої шахти",
+                memory: "• День 1, Ніч, Запорошена таверна «Чорний Круг»: Ви сховалися у закинутій будівлі під час грози.",
+                locations: [
+                    { id: "loc_preset_1", name: "Запорошена таверна «Чорний Круг»", description: "Запорошена таверна «Чорний Круг». Стара напівзруйнована будівля на краю селища, де можна знайти тимчасовий прихисток під час негоди." }
+                ],
+                pName: "Сергій", pSurname: "Мандрівник", pRace: "Людина", pGender: "Чоловіча", pAge: 29, pRole: "Шукач пригод", pPersonality: "Сміливий, допитливий", pApp: "Темний плащ, шпага на поясі", pSeed: "Serhii",
+                cName: "Емілі", cSurname: "Золота Лисиця", cRace: "Людина", cGender: "Жіноча", cAge: 24, cRole: "Здібна злодійка", cPersonality: "Горда егоїстка, допитлива, кмітлива, імпульсивна та закохана у стародавні таємниці, гостра на язик", cApp: "Шкіряний обладунок, короткий клинок", cSeed: "Emily"
+            }
+        ];
+
+        const TIME_STEPS = ["Ранок", "День", "Вечір", "Ніч"];
+        const TIME_ICONS = { "Ранок": "🌅", "День": "☀️", "Вечір": "🌆", "Ніч": "🌙" };
+
+        // Local, network-independent fallback avatar (used only if generation/loading fails)
+        const FALLBACK_AVATAR = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="32" fill="#3a3a46"/><circle cx="32" cy="24" r="12" fill="#8a8aa0"/><path d="M10 56c4-14 18-20 22-20s18 6 22 20" fill="#8a8aa0"/></svg>'
+        );
+
+        /* Map internal gender labels to English words for the image-generation prompt */
+        function genderToPromptWord(gender) {
+            if (gender === 'Чоловіча') return 'male';
+            if (gender === 'Жіноча') return 'female';
+            return 'person';
+        }
+
+        /* Map common Ukrainian race labels to English words the image model understands better.
+           Falls back to the original text for custom/unknown races. */
+        const RACE_PROMPT_MAP = {
+            'людина': 'human',
+            'ельф': 'elf',
+            'ельфійка': 'elf',
+            'напівельф': 'half-elf',
+            'дворф': 'dwarf',
+            'гном': 'gnome',
+            'орк': 'orc',
+            'напіворк': 'half-orc',
+            'тролль': 'troll',
+            'вампір': 'vampire',
+            'демон': 'demon',
+            'ангел': 'angel',
+            'дракон': 'dragon-like humanoid',
+            'нежить': 'undead',
+            'фея': 'fairy'
+        };
+        function raceToPromptWord(race) {
+            const clean = (race || 'Людина').trim();
+            const mapped = RACE_PROMPT_MAP[clean.toLowerCase()];
+            return mapped || clean;
+        }
+
+        /* Visual-setting keywords for avatars. More specific styles are listed first. */
+        const SETTING_PROMPT_RULES = [
+            { re: /кіберпанк|cyberpunk|неон[ои]?в|synthwave/i, hint: 'cyberpunk setting, neon lights, futuristic street fashion, chrome and rain, no medieval clothing' },
+            { re: /стімпанк|steampunk/i, hint: 'steampunk setting, victorian era with brass gears, goggles, retro-futuristic machines' },
+            { re: /постапокал|post[- ]?apocalyp|wasteland|пуст[еи]л/i, hint: 'post-apocalyptic setting, worn scavenged clothing, dusty wasteland look' },
+            { re: /космічн|sci[- ]?fi|science fiction|космос|space opera|зореліт|футурист/i, hint: 'science fiction setting, futuristic clothing, spacecraft aesthetic' },
+            { re: /вестерн|western|дикий захід/i, hint: 'wild west setting, 19th century american frontier clothing' },
+            { re: /пірат|pirate|кариб/i, hint: 'golden age of piracy setting, 18th century seafaring clothing' },
+            { re: /вікторіан|victorian/i, hint: 'victorian era setting, 19th century clothing' },
+            { re: /готик|gothic|вампірськ/i, hint: 'dark gothic setting, victorian gothic clothing' },
+            { re: /сучасн|modern day|наш час|21 стол/i, hint: 'modern day setting, contemporary clothing, no period costume' },
+            { re: /античн|давн(я|ьогрец)|єгипет|римськ|ancient (greece|rome|egypt)/i, hint: 'ancient historical setting, period-accurate clothing' },
+            { re: /самурай|сьогун|сегун|феодальн(а|ій) япон/i, hint: 'feudal japan setting, period clothing, kimono or samurai attire' },
+            { re: /середньовіч|medieval|фентезі|fantasy|лицар|дворф|таверн|замок|королівств/i, hint: 'medieval fantasy setting, period clothing, no modern items' }
+        ];
+
+        function inferSettingPromptHint(text) {
+            const haystack = (text || '').trim();
+            if (!haystack) return '';
+            const rule = SETTING_PROMPT_RULES.find(r => r.re.test(haystack));
+            return rule ? rule.hint : '';
+        }
+
+        /* Prefer the game's stored setting; otherwise guess from title/location/objectives. */
+        function getAvatarSettingHint(game) {
+            const g = game || currentGame;
+            if (!g) return '';
+            const stored = (g.setting || '').trim();
+            const corpus = [
+                stored,
+                g.title,
+                g.objectives,
+                g.locationName,
+                g.locationDescription,
+                g.location
+            ].filter(Boolean).join(' | ');
+            const inferred = inferSettingPromptHint(corpus);
+            if (inferred) return inferred;
+            if (stored) return `${stored} setting, clothing and look matching this world`;
+            return '';
+        }
+
+        /* Build the pollinations.ai text prompt describing a character's portrait.
+           Only visual traits are used (race, gender, age, appearance) — personality is
+           deliberately excluded since it's non-visual and tends to confuse image models.
+           English portrait/quality keywords are added to improve accuracy and likeness. */
+        function buildAvatarPrompt(c, game) {
+            const genderWord = genderToPromptWord(c && c.gender);
+            const age = (c && c.age) || 25;
+            const race = raceToPromptWord(c && c.race);
+            const appearance = ((c && c.appearance) || '').trim();
+            const settingHint = getAvatarSettingHint(game);
+            const promptParts = [
+                'close-up portrait photo of a single person',
+                `${age}-year-old ${genderWord} ${race}`,
+                appearance,
+                settingHint,
+                'face clearly visible, looking at camera, detailed facial features, natural lighting, photorealistic, high quality, sharp focus'
+            ];
+            return promptParts.filter(Boolean).join(', ');
+        }
+
+        /* Build a full pollinations.ai image URL for a character, with a random seed.
+           Generated at a higher resolution than displayed for better detail; the browser
+           scales it down to fit the avatar. */
+        function buildAvatarUrl(c, game) {
+            const prompt = buildAvatarPrompt(c, game);
+            const seed = Math.floor(Math.random() * 2147483647);
+            return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&model=flux&nologo=true&seed=${seed}`;
+        }
+
+        let db = null;
+        let currentGame = null;
+        let isGenerating = false;
+        let currentOptions = [];
+        // IDs of characters added during gameplay (before next player message)
+        let pendingNewCharIds = [];
+        // IDs of characters manually added during gameplay; deletable until the next player message
+        let pendingManualCharIds = [];
+        // IDs of locations manually added during gameplay; deletable until the next player message
+        let pendingManualLocationIds = [];
+
+        /* ==========================================
+           1. RELATIONSHIPS ENGINE (0-100%)
+           ========================================== */
+        function getRelation(char, targetId) {
+            if (!char) return 50;
+            if (!char.relations || typeof char.relations !== 'object') char.relations = {};
+            if (char.relations[targetId] === undefined) char.relations[targetId] = 50;
+            return char.relations[targetId];
+        }
+
+        function setRelation(char, targetId, val) {
+            if (!char) return;
+            if (!char.relations || typeof char.relations !== 'object') char.relations = {};
+            const num = Math.max(0, Math.min(100, parseInt(val) || 0));
+            char.relations[targetId] = num;
+        }
+
+        function getRelClass(rel) {
+            if (rel >= 85) return 'rel-love';
+            if (rel >= 70) return 'rel-friend';
+            if (rel >= 55) return 'rel-friendly';
+            if (rel >= 45) return 'rel-neutral';
+            if (rel >= 30) return 'rel-suspicious';
+            if (rel >= 15) return 'rel-hostile';
+            return 'rel-hate';
+        }
+
+        function getRelIcon(rel) {
+            if (rel >= 85) return '💖';
+            if (rel >= 70) return '💚';
+            if (rel >= 55) return '😊';
+            if (rel >= 45) return '😐';
+            if (rel >= 30) return '🤨';
+            if (rel >= 15) return '😠';
+            return '💀';
+        }
+
+        function getRelDescription(rel) {
+            if (rel >= 95) return 'Інтимність / Глибока закоханість';
+            if (rel >= 85) return 'Закоханість / Романтичні почуття';
+            if (rel >= 70) return 'Щира дружба / Довіра';
+            if (rel >= 55) return 'Симпатія / Прихильність';
+            if (rel >= 45) return 'Нейтральне / Ділове';
+            if (rel >= 30) return 'Стриманість / Підозра';
+            if (rel >= 15) return 'Неприязнь / Ворожість';
+            return 'Ненависть / Смертельний ворог';
+        }
+
+        function updateCharRelation(charId, targetId, val) {
+            const c = currentGame.characters.find(char => char.id === charId);
+            if (c) {
+                setRelation(c, targetId, val);
+                dbSaveGame(currentGame);
+                renderMessages();
+            }
+        }
+
+        function updateTargetRelBadgeUI(charId, targetId, val) {
+            const num = parseInt(val) || 0;
+            const badge = document.getElementById(`rel_badge_${charId}_${targetId}`);
+            if (badge) {
+                badge.className = `rel-badge ${getRelClass(num)}`;
+                badge.innerText = `${getRelIcon(num)} ${num}%`;
+                badge.title = getRelDescription(num);
+            }
+            if (currentGame && targetId === currentGame.playerCharId) {
+                const summaryBadge = document.getElementById(`summary_rel_badge_${charId}`);
+                if (summaryBadge) {
+                    summaryBadge.className = `rel-badge ${getRelClass(num)}`;
+                    summaryBadge.innerText = `${getRelIcon(num)} ${num}%`;
+                }
+            }
+        }
+
+        /* ==========================================
+           2. THEME & UI HELPERS
+           ========================================== */
+        function initTheme() {
+            const saved = localStorage.getItem('app_theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+            } else {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            }
+            updateThemeButtonText();
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('app_theme', next);
+            updateThemeButtonText();
+        }
+
+        function updateThemeButtonText() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const btn = document.getElementById('themeToggleBtn');
+            if (btn) btn.innerText = current === 'light' ? '🌙' : '☀️';
+        }
+
+        /* Renders an avatar <img> wrapped so a spinner shows while the image is still loading
+           (e.g. while pollinations.ai is generating it). Falls back to a local placeholder on error. */
+        function renderAvatarTag(url, sizeStyle = '') {
+            const safeUrl = url || FALLBACK_AVATAR;
+            const style = sizeStyle ? ` style="${sizeStyle}"` : '';
+            return `<span class="avatar-wrap loading"${style}>` +
+                `<span class="avatar-spinner"></span>` +
+                `<img src="${safeUrl}" class="char-avatar"${style} onload="this.parentElement.classList.remove('loading')" onerror="this.onerror=null; this.src='${FALLBACK_AVATAR}'; this.parentElement.classList.remove('loading');">` +
+                `</span>`;
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            } else {
+                sidebar.classList.toggle('collapsed');
+            }
+        }
+
+        function toggleSidebarHeader() {
+            const body = document.getElementById('sidebarHeaderBody');
+            const btn = document.getElementById('sidebarHeaderToggleBtn');
+            if (!body || !btn) return;
+            const isCollapsed = body.classList.toggle('collapsed');
+            btn.innerText = isCollapsed ? '▼' : '▲';
+            localStorage.setItem('sidebar_header_collapsed', isCollapsed ? '1' : '0');
+        }
+
+        function initSidebarHeaderState() {
+            const saved = localStorage.getItem('sidebar_header_collapsed');
+            const body = document.getElementById('sidebarHeaderBody');
+            const btn = document.getElementById('sidebarHeaderToggleBtn');
+            if (!body || !btn) return;
+            if (saved === '1') {
+                body.classList.add('collapsed');
+                btn.innerText = '▼';
+            }
+        }
+
+        function updateDayDisplay() {
+            const day = currentGame && typeof currentGame.day === 'number' && currentGame.day >= 1 ? currentGame.day : 1;
+            const stateDayDisplay = document.getElementById('stateDayDisplay');
+            if (stateDayDisplay) {
+                stateDayDisplay.innerText = `День ${day}`;
+            }
+            const headerDayBadge = document.getElementById('headerDayBadge');
+            if (headerDayBadge) {
+                headerDayBadge.innerText = `День ${day}`;
+            }
+        }
+
+        function syncTimeOfDayButton() {
+            const tod = currentGame && currentGame.timeOfDay ? currentGame.timeOfDay : "День";
+            const icon = TIME_ICONS[tod] || "☀️";
+            const headerTimeBadge = document.getElementById('headerTimeBadge');
+            if (headerTimeBadge) {
+                headerTimeBadge.innerText = `${icon} ${tod}`;
+            }
+            const headerTimeBtn = document.getElementById('headerTimeBtn');
+            if (headerTimeBtn) {
+                headerTimeBtn.innerText = icon;
+            }
+        }
+
+        function setStatus(loading, text = "Gemini генерує відповідь...") {
+            isGenerating = loading;
+            const container = document.getElementById('statusContainer');
+            const statusText = document.getElementById('statusText');
+            if (loading) {
+                statusText.innerText = text;
+                container.classList.add('active');
+            } else {
+                container.classList.remove('active');
+            }
+        }
+
+        function isMobileDevice() {
+            const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+            const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua);
+            const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            return isMobileUA || isCoarse || (hasTouch && window.matchMedia('(max-width: 900px)').matches);
+        }
+
+        /* Auto Textarea Height & Enter key submit */
+        const userInput = document.getElementById('userInput');
+        userInput.addEventListener('input', () => {
+            userInput.style.height = 'auto';
+            userInput.style.height = Math.min(userInput.scrollHeight, 200) + 'px';
+        });
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (isMobileDevice()) {
+                    // На мобільних пристроях Enter додає новий рядок; відправка — лише кнопкою "Надіслати"
+                    return;
+                }
+                if (!e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            }
+        });
+
+        /* Scroll to Bottom Floating Button Logic */
+        function updateScrollToBottomVisibility() {
+            const container = document.getElementById('chatMessages');
+            const btn = document.getElementById('scrollToBottomBtn');
+            if (!container || !btn) return;
+            const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+            if (distanceFromBottom > 80) {
+                btn.classList.add('visible');
+            } else {
+                btn.classList.remove('visible');
+            }
+        }
+
+        function scrollToBottomSmooth() {
+            const container = document.getElementById('chatMessages');
+            if (!container) return;
+            container.scrollTo({
+                top: container.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        const chatMessagesElem = document.getElementById('chatMessages');
+        if (chatMessagesElem) {
+            chatMessagesElem.addEventListener('scroll', updateScrollToBottomVisibility);
+        }
+
+        /* ==========================================
+           3. STORAGE & DATABASE (IndexedDB)
+           ========================================== */
+        const DB_NAME = 'GeminiQuestDB';
+        const DB_VERSION = 1;
+
+        function saveApiKey(key) { localStorage.setItem('gemini_api_key', key); }
+        function loadApiKey() {
+            const saved = localStorage.getItem('gemini_api_key');
+            if (saved) document.getElementById('apiKey').value = saved;
+        }
+
+        function saveSelectedModel(model) { localStorage.setItem('gemini_selected_model', model); }
+        function loadSelectedModel() {
+            const saved = localStorage.getItem('gemini_selected_model') || 'gemini-3.5-flash-lite';
+            document.getElementById('modelSelect').value = saved;
+        }
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('games')) {
+                        db.createObjectStore('games', { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve();
+                };
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        function dbGetAllGames() {
+            return new Promise((resolve) => {
+                const tx = db.transaction('games', 'readonly');
+                const store = tx.objectStore('games');
+                const req = store.getAll();
+                req.onsuccess = () => resolve(req.result);
+            });
+        }
+
+        function dbSaveGame(game) {
+            return new Promise((resolve) => {
+                const tx = db.transaction('games', 'readwrite');
+                const store = tx.objectStore('games');
+                const req = store.put(game);
+                req.onsuccess = () => resolve(req.result);
+            });
+        }
+
+        function dbDeleteGame(id) {
+            return new Promise((resolve) => {
+                const tx = db.transaction('games', 'readwrite');
+                const store = tx.objectStore('games');
+                const req = store.delete(id);
+                req.onsuccess = () => resolve();
+            });
+        }
+
+        /* ==========================================
+           4. IMPORT / EXPORT JSON
+           ========================================== */
+        function exportCurrentGame() {
+            if (!currentGame) return alert("Немає активної гри для експорту!");
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentGame, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `${currentGame.title || 'game'}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importGame(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const importedGame = JSON.parse(e.target.result);
+                    delete importedGame.id; // Assign new ID
+                    if (!importedGame.day || typeof importedGame.day !== 'number' || importedGame.day < 1) {
+                        importedGame.day = 1;
+                    }
+                    const id = await dbSaveGame(importedGame);
+                    saveLastActiveGameId(id);
+                    currentGame = { ...importedGame, id };
+                    await refreshGameList();
+                    renderAll('bottom');
+                    await checkAndAutoRespond();
+                    alert("Гру успішно імпортовано!");
+                } catch (err) {
+                    alert("Помилка читання JSON файлу: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        /* ==========================================
+           5. GAME STATE ENGINE
+           ========================================== */
+        function saveLastActiveGameId(id) {
+            if (id) localStorage.setItem('last_active_game_id', id);
+        }
+
+        function getLastActiveGameId() {
+            const saved = localStorage.getItem('last_active_game_id');
+            return saved ? parseInt(saved) : null;
+        }
+
+        async function refreshGameList() {
+            const games = await dbGetAllGames();
+            const select = document.getElementById('gameSelect');
+            select.innerHTML = '';
+
+            if (games.length === 0) {
+                select.innerHTML = '<option value="">Немає збережених ігор</option>';
+                document.getElementById('gameStatePanel').style.display = 'none';
+                document.getElementById('currentGameTitle').innerText = 'Створіть нову гру';
+                const headerDayBadge = document.getElementById('headerDayBadge');
+                if (headerDayBadge) headerDayBadge.innerText = 'День 1';
+                currentGame = null;
+                localStorage.removeItem('last_active_game_id');
+                renderMessages('preserve');
+                return;
+            }
+
+            games.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g.id;
+                opt.innerText = g.title;
+                select.appendChild(opt);
+            });
+
+            if (!currentGame && games.length > 0) {
+                const lastId = getLastActiveGameId();
+                const targetGame = (lastId && games.some(g => g.id === lastId))
+                    ? lastId
+                    : games[games.length - 1].id;
+                select.value = targetGame;
+                await loadSelectedGame();
+            } else if (currentGame) {
+                select.value = currentGame.id;
+                saveLastActiveGameId(currentGame.id);
+            }
+        }
+
+        async function createNewGame() {
+            const defaultPreset = SCENARIOS_PRESETS[0];
+            const title = prompt("Введіть назву нової пригоди:", defaultPreset.title);
+            if (!title) return;
+
+            const apiKey = document.getElementById('apiKey').value;
+            const selectedModel = document.getElementById('modelSelect').value;
+
+            let gameData = null;
+
+            if (apiKey) {
+                setStatus(true, "Створення світу та персонажів...");
+                try {
+                    const promptGen = `Створи початковий світ та 2 головних персонажів для квесту: "${title}". Поверни JSON з полями:
+                    {
+                      "setting": "короткий візуальний стиль світу англійською для портретів (medieval fantasy / cyberpunk / post-apocalyptic / space opera / modern day / victorian / wild west / тощо)",
+                      "locationName": "назва локації", "locationDescription": "детальний опис локації", "timeOfDay": "Ранок або День або Вечір або Ніч", "objectives": "цілі", "memory": "пам'ять",
+                      "maleCharacter": { "name": "", "surname": "", "race": "Людина / Ельф / інша", "age": 25, "role": "", "personality": "", "appearance": "", "seed": "m1" },
+                      "femaleCharacter": { "name": "", "surname": "", "race": "Людина / Ельф / інша", "age": 24, "role": "", "personality": "", "appearance": "", "seed": "f1" }
+                    }
+                    Зовнішність персонажів має відповідати setting (одяг, зброя, деталі епохи).`;
+
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ role: "user", parts: [{ text: promptGen }] }],
+                            generationConfig: { responseMimeType: "application/json" }
+                        })
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        gameData = JSON.parse(data.candidates[0].content.parts[0].text);
+                    }
+                } catch (err) {
+                    console.error("AI error, using fallback preset", err);
+                } finally {
+                    setStatus(false);
+                }
+            }
+
+            if (!gameData) {
+                gameData = {
+                    setting: defaultPreset.setting,
+                    locationName: defaultPreset.locationName || defaultPreset.location,
+                    locationDescription: defaultPreset.locationDescription || defaultPreset.location,
+                    location: defaultPreset.location,
+                    timeOfDay: defaultPreset.timeOfDay,
+                    objectives: defaultPreset.objectives,
+                    memory: defaultPreset.memory,
+                    maleCharacter: { name: defaultPreset.pName, surname: defaultPreset.pSurname, race: defaultPreset.pRace, age: defaultPreset.pAge, role: defaultPreset.pRole, personality: defaultPreset.pPersonality, appearance: defaultPreset.pApp, seed: defaultPreset.pSeed },
+                    femaleCharacter: { name: defaultPreset.cName, surname: defaultPreset.cSurname, race: defaultPreset.cRace, age: defaultPreset.cAge, role: defaultPreset.cRole, personality: defaultPreset.cPersonality, appearance: defaultPreset.cApp, seed: defaultPreset.cSeed }
+                };
+            }
+
+            const pId = "player_" + Date.now();
+            const cId = "char_" + (Date.now() + 1);
+
+            const locationName = (gameData.locationName || gameData.location || 'Нова локація').trim();
+            const locationDescription = (gameData.locationDescription || gameData.location || '').trim();
+
+            const newGame = {
+                title: title,
+                setting: (gameData.setting || inferSettingPromptHint(title) || '').trim(),
+                day: 1,
+                locationName: locationName,
+                locationDescription: locationDescription,
+                location: locationName,
+                timeOfDay: gameData.timeOfDay,
+                objectives: gameData.objectives,
+                memory: gameData.memory ? (gameData.memory.startsWith('•') ? gameData.memory : `• День 1, ${gameData.timeOfDay}, ${locationName}: ${gameData.memory}`) : `• День 1, ${gameData.timeOfDay}, ${locationName}: Початок пригод.`,
+                playerCharId: pId,
+                isStarted: false,
+                locations: [
+                    {
+                        id: "loc_" + Date.now(),
+                        name: locationName,
+                        description: locationDescription
+                    }
+                ],
+                characters: [],
+                messages: [
+                    { type: "narration", text: `Світ створено. Персонажі: ${gameData.maleCharacter.name} (${gameData.maleCharacter.race || 'Людина'}) та ${gameData.femaleCharacter.name} (${gameData.femaleCharacter.race || 'Людина'}). Натисніть «Почати гру».` }
+                ]
+            };
+
+            const maleChar = {
+                id: pId, name: gameData.maleCharacter.name, surname: gameData.maleCharacter.surname, race: gameData.maleCharacter.race || "Людина", gender: "Чоловіча", age: gameData.maleCharacter.age, role: gameData.maleCharacter.role, personality: gameData.maleCharacter.personality, appearance: gameData.maleCharacter.appearance, relations: {}
+            };
+            maleChar.avatar = buildAvatarUrl(maleChar, newGame);
+
+            const femaleChar = {
+                id: cId, name: gameData.femaleCharacter.name, surname: gameData.femaleCharacter.surname, race: gameData.femaleCharacter.race || "Людина", gender: "Жіноча", age: gameData.femaleCharacter.age, role: gameData.femaleCharacter.role, personality: gameData.femaleCharacter.personality, appearance: gameData.femaleCharacter.appearance, relations: { [pId]: 45 }
+            };
+            femaleChar.avatar = buildAvatarUrl(femaleChar, newGame);
+
+            newGame.characters = [maleChar, femaleChar];
+
+            const id = await dbSaveGame(newGame);
+            saveLastActiveGameId(id);
+            currentGame = { ...newGame, id };
+            await refreshGameList();
+            renderAll('bottom');
+        }
+
+        async function loadSelectedGame() {
+            const id = parseInt(document.getElementById('gameSelect').value);
+            if (!id) return;
+            const games = await dbGetAllGames();
+            currentGame = games.find(g => g.id === id);
+            saveLastActiveGameId(id);
+            renderAll('bottom');
+            await checkAndAutoRespond();
+        }
+
+        /* Check if last message is from user and trigger auto-response on load */
+        async function checkAndAutoRespond() {
+            if (!currentGame || !currentGame.isStarted || isGenerating) return;
+            if (currentGame.messages && currentGame.messages.length > 0) {
+                const lastMsg = currentGame.messages[currentGame.messages.length - 1];
+                if (lastMsg.type === 'user') {
+                    await callGemini(lastMsg.text);
+                }
+            }
+        }
+
+        async function deleteCurrentGame() {
+            if (!currentGame) return;
+            if (confirm(`Видалити гру "${currentGame.title}"?`)) {
+                const deletedId = currentGame.id;
+                await dbDeleteGame(deletedId);
+                if (getLastActiveGameId() === deletedId) {
+                    localStorage.removeItem('last_active_game_id');
+                }
+                currentGame = null;
+                await refreshGameList();
+            }
+        }
+
+        function updateGameState() {
+            if (!currentGame) return;
+            const oldTimeOfDay = currentGame.timeOfDay;
+            const locationNameInput = document.getElementById('stateLocationName');
+            const locationDescriptionInput = document.getElementById('stateLocationDescription');
+            const legacyLocationInput = document.getElementById('stateLocation');
+            const locationName = (locationNameInput ? locationNameInput.value : (currentGame.locationName || currentGame.location || '')).trim();
+            const locationDescription = (locationDescriptionInput ? locationDescriptionInput.value : (currentGame.locationDescription || currentGame.location || '')).trim();
+            currentGame.locationName = locationName;
+            currentGame.locationDescription = locationDescription;
+            currentGame.location = locationName; // compatibility with existing game logic/imports
+            if (legacyLocationInput) legacyLocationInput.value = locationName;
+            currentGame.timeOfDay = document.getElementById('stateTimeOfDay').value;
+            const settingInput = document.getElementById('stateSetting');
+            if (settingInput) currentGame.setting = settingInput.value.trim();
+            currentGame.objectives = document.getElementById('stateObjectives').value;
+            currentGame.memory = document.getElementById('stateMemory').value;
+            currentGame.playerCharId = document.getElementById('playerCharSelect').value;
+
+            // Day is not editable manually
+
+            if (currentGame.timeOfDay === "Ранок") {
+                if (oldTimeOfDay !== "Ранок") {
+                    currentGame.pendingDayTransition = true;
+                }
+            } else {
+                currentGame.pendingDayTransition = false;
+            }
+
+            syncTimeOfDayButton();
+            updateDayDisplay();
+            renderLocationsList();
+            dbSaveGame(currentGame);
+        }
+
+        function renderAll(scrollMode = 'preserve') {
+            if (!currentGame) return;
+            currentGame.day = typeof currentGame.day === 'number' && currentGame.day >= 1 ? currentGame.day : 1;
+            // Backward compatibility: old saves used one field `location` for both name and description.
+            if (!currentGame.locationName) currentGame.locationName = currentGame.location || '';
+            if (!currentGame.locationDescription) currentGame.locationDescription = currentGame.location || '';
+            currentGame.location = currentGame.locationName || currentGame.location || '';
+            if (!Array.isArray(currentGame.locations)) {
+                currentGame.locations = [];
+                if (currentGame.location) {
+                    currentGame.locations.push({
+                        id: 'loc_' + Date.now(),
+                        name: currentGame.locationName || currentGame.location,
+                        description: currentGame.locationDescription || currentGame.location
+                    });
+                }
+            }
+            document.getElementById('gameStatePanel').style.display = 'flex';
+            document.getElementById('currentGameTitle').innerText = currentGame.title;
+            const stateLocationName = document.getElementById('stateLocationName');
+            const stateLocationDescription = document.getElementById('stateLocationDescription');
+            const legacyStateLocation = document.getElementById('stateLocation');
+            if (stateLocationName) stateLocationName.value = currentGame.locationName || currentGame.location || '';
+            if (stateLocationDescription) stateLocationDescription.value = currentGame.locationDescription || currentGame.location || '';
+            if (legacyStateLocation) legacyStateLocation.value = currentGame.location || currentGame.locationName || '';
+            const stateSetting = document.getElementById('stateSetting');
+            if (stateSetting) stateSetting.value = currentGame.setting || '';
+            document.getElementById('stateTimeOfDay').value = currentGame.timeOfDay || 'День';
+            document.getElementById('stateObjectives').value = currentGame.objectives || '';
+            document.getElementById('stateMemory').value = currentGame.memory || '';
+
+            updateDayDisplay();
+            syncTimeOfDayButton();
+            renderCharacterSelectors();
+            renderCharactersList();
+            renderLocationsList();
+            renderMessages(scrollMode);
+            updateInputAvailability();
+        }
+
+        function updateInputAvailability() {
+            const inputArea = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
+            if (currentGame && currentGame.isStarted) {
+                inputArea.disabled = false;
+                sendBtn.disabled = false;
+            } else {
+                inputArea.disabled = true;
+                sendBtn.disabled = true;
+            }
+        }
+
+        function renderCharacterSelectors() {
+            const playerSelect = document.getElementById('playerCharSelect');
+            playerSelect.innerHTML = '';
+            currentGame.characters.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                const raceStr = c.race ? `${c.race}, ` : '';
+                opt.innerText = `${c.name || ''} ${c.surname || ''} (${raceStr}${c.gender || ''})`.trim();
+                if (c.id === currentGame.playerCharId) opt.selected = true;
+                playerSelect.appendChild(opt);
+            });
+            playerSelect.disabled = currentGame.isStarted;
+        }
+
+        /* Collapsible Character Cards */
+        function renderCharactersList() {
+            const container = document.getElementById('charactersList');
+            container.innerHTML = '';
+
+            const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { id: 'player', name: 'Гравець' };
+
+            currentGame.characters.forEach(c => {
+                const isPlayer = c.id === currentGame.playerCharId;
+                const relVal = getRelation(c, currentGame.playerCharId);
+                const details = document.createElement('details');
+                details.className = 'char-details';
+                const avatarSrc = c.avatar || FALLBACK_AVATAR;
+                // Is this a newly added character (pending slider display)?
+                const isPendingNew = pendingNewCharIds.includes(c.id);
+
+                const summaryRel = !isPlayer
+                    ? `<span class="rel-badge ${getRelClass(relVal)}" id="summary_rel_badge_${c.id}" style="margin-left:auto; margin-right:6px;">${getRelIcon(relVal)} ${relVal}%</span>`
+                    : `<span style="font-size:11px; opacity:0.7; margin-left:auto; margin-right:6px;">(Гравець)</span>`;
+
+                // Relationships to ALL other characters in the game
+                // Hide relations block for the player character when game is started
+                const shouldShowRelations = !(isPlayer && currentGame.isStarted);
+                const allOtherCharacters = currentGame.characters.filter(other => other.id !== c.id);
+                const relationshipsHTML = (shouldShowRelations && allOtherCharacters.length > 0) ? `
+                    <div class="form-group" style="padding:10px; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg); margin-top:6px;">
+                        <div style="font-weight:bold; font-size:12px; margin-bottom:8px; color:var(--accent-color); display:flex; align-items:center; gap:6px;">
+                            <span>❤️ Відношення до персонажів</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            ${allOtherCharacters.map(target => {
+                    const targetRel = getRelation(c, target.id);
+                    const isTargetPlayer = target.id === currentGame.playerCharId;
+                    const targetLabel = `${target.name || ''} ${target.surname || ''} ${isTargetPlayer ? '(Гравець)' : ''}`.trim();
+                    // Show slider: before game start OR (game started AND this char is pending AND this target is the new char or current char is new)
+                    const showSlider = !currentGame.isStarted || (isPendingNew && !isPlayer) || (!isPlayer && pendingNewCharIds.includes(target.id));
+                    return `
+                                <div style="display:flex; flex-direction:column; gap:4px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+                                        <span>До <strong>${targetLabel}</strong>:</span>
+                                        <span class="rel-badge ${getRelClass(targetRel)}" id="rel_badge_${c.id}_${target.id}" title="${getRelDescription(targetRel)}">${getRelIcon(targetRel)} ${targetRel}%</span>
+                                    </div>
+                                    ${showSlider ? `<input type="range" min="0" max="100" value="${targetRel}" style="margin-top:2px; cursor:pointer;" oninput="updateCharRelation('${c.id}', '${target.id}', this.value); updateTargetRelBadgeUI('${c.id}', '${target.id}', this.value);">` : ''}
+                                </div>`;
+                }).join('')}
+                        </div>
+                    </div>
+                ` : '';
+
+                details.innerHTML = `
+                    <summary>
+                        ${renderAvatarTag(avatarSrc, 'width:28px;height:28px;')}
+                        <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.name || ''} ${c.surname || ''}</span>
+                        ${summaryRel}
+                        ${(!currentGame.isStarted || pendingManualCharIds.includes(c.id) || !!c.pendingManualDeletion) ? `<button class="danger" style="padding:1px 6px; font-size:12px;" onclick="deleteCharacter(event, '${c.id}')">✕</button>` : `<span title="Після початку гри персонаж заблокований" style="font-size:12px; opacity:0.45; padding:1px 6px;">🔒</span>`}
+                    </summary>
+                    <div class="char-details-body">
+                        <div class="form-group">
+                            <label>Ім'я</label>
+                            <input type="text" value="${c.name || ''}" onchange="updateCharData('${c.id}', 'name', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Прізвище</label>
+                            <input type="text" value="${c.surname || ''}" onchange="updateCharData('${c.id}', 'surname', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Раса</label>
+                            <input type="text" value="${c.race || 'Людина'}" placeholder="Людина, Ельф, Дворф..." onchange="updateCharData('${c.id}', 'race', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Стать</label>
+                            <select onchange="updateCharData('${c.id}', 'gender', this.value)">
+                                <option value="Чоловіча" ${c.gender === 'Чоловіча' ? 'selected' : ''}>Чоловіча</option>
+                                <option value="Жіноча" ${c.gender === 'Жіноча' ? 'selected' : ''}>Жіноча</option>
+                                <option value="Інша" ${c.gender === 'Інша' ? 'selected' : ''}>Інша</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Вік</label>
+                            <input type="number" value="${c.age || ''}" onchange="updateCharData('${c.id}', 'age', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Роль / Фах</label>
+                            <input type="text" value="${c.role || ''}" onchange="updateCharData('${c.id}', 'role', this.value)">
+                        </div>
+
+                        ${relationshipsHTML}
+
+                        <div class="form-group">
+                            <label>Характер (Ключовий для ШІ)</label>
+                            <textarea rows="3" placeholder="Опишіть манеру, темперамент, звички, недоліки..." onchange="updateCharData('${c.id}', 'personality', this.value)">${c.personality || ''}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Зовнішність</label>
+                            <textarea rows="3" placeholder="Зріст, одяг, зброя, особливі прикмети..." onchange="updateCharData('${c.id}', 'appearance', this.value)">${c.appearance || ''}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Аватар</label>
+                            <div class="row">
+                                <input style="width: 100%" type="text" value="${c.avatar && !c.avatar.startsWith('data:') ? c.avatar : ''}" onchange="updateCharData('${c.id}', 'avatar', this.value)">
+                                <input type="file" accept="image/*" style="display:none;" id="file_${c.id}" onchange="uploadAvatarFile('${c.id}', this)">
+                                <button type="button" style="padding:4px 8px; font-size:12px;" onclick="document.getElementById('file_${c.id}').click()" title="Завантажити файл">📁</button>
+                                <button type="button" style="padding:4px 8px; font-size:12px;" onclick="generateAvatar('${c.id}')" title="Згенерувати аватар">🎨</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(details);
+            });
+        }
+
+        function uploadAvatarFile(charId, input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => updateCharData(charId, 'avatar', e.target.result);
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        /* Generate (or regenerate) a character avatar via pollinations.ai image generation,
+           using race, gender, age, personality and appearance as the prompt. */
+        function generateAvatar(charId) {
+            if (!currentGame) return;
+            const c = currentGame.characters.find(char => char.id === charId);
+            if (!c) return;
+
+            const charName = `${c.name || ''} ${c.surname || ''}`.trim() || 'цього персонажа';
+            if (!confirm(`Згенерувати новий аватар для "${charName}"? Поточний аватар буде замінено.`)) return;
+
+            c.avatar = buildAvatarUrl(c);
+            dbSaveGame(currentGame);
+            renderCharacterSelectors();
+            renderCharactersList();
+            renderMessages();
+        }
+
+        function addNewCharacter() {
+            const id = 'char_' + Date.now();
+            const newChar = {
+                id: id, name: "Новий", surname: "Персонаж", race: "Людина", gender: "Чоловіча", age: 25, role: "Персонаж", personality: "Спокійний", appearance: "Звичайний", pendingManualDeletion: currentGame.isStarted, relations: {}
+            };
+            newChar.avatar = buildAvatarUrl(newChar);
+            currentGame.characters.push(newChar);
+            // Track as pending so sliders appear during gameplay
+            if (currentGame.isStarted) {
+                pendingNewCharIds.push(id);
+                pendingManualCharIds.push(id);
+            }
+            dbSaveGame(currentGame);
+            renderAll();
+        }
+
+        function updateCharData(id, key, val) {
+            const c = currentGame.characters.find(char => char.id === id);
+            if (c) {
+                c[key] = key === 'age' ? parseInt(val) || 0 : val;
+                dbSaveGame(currentGame);
+                if (['name', 'surname', 'race', 'avatar'].includes(key)) {
+                    renderCharacterSelectors();
+                    renderMessages();
+                }
+            }
+        }
+
+        function deleteCharacter(e, id) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!currentGame) return;
+
+            const char = currentGame.characters.find(c => c.id === id);
+            const canDelete = !currentGame.isStarted || pendingManualCharIds.includes(id) || !!char?.pendingManualDeletion;
+            if (!canDelete) {
+                alert('Після початку гри цього персонажа не можна видалити.');
+                return;
+            }
+            const charName = char ? `${char.name || ''} ${char.surname || ''}`.trim() : 'цього персонажа';
+            if (!confirm(`Видалити персонажа "${charName}"?`)) return;
+            currentGame.characters = currentGame.characters.filter(c => c.id !== id);
+            pendingNewCharIds = pendingNewCharIds.filter(pid => pid !== id);
+            pendingManualCharIds = pendingManualCharIds.filter(pid => pid !== id);
+            dbSaveGame(currentGame);
+            renderAll();
+        }
+
+        /* ==========================================
+           LOCATIONS MANAGER
+           ========================================== */
+        function addNewLocation() {
+            if (!currentGame) return;
+            if (!Array.isArray(currentGame.locations)) currentGame.locations = [];
+            const id = 'loc_' + Date.now();
+            currentGame.locations.push({
+                id: id,
+                name: "Нова локація",
+                description: "",
+                pendingManualDeletion: currentGame.isStarted
+            });
+            if (currentGame.isStarted) {
+                pendingManualLocationIds.push(id);
+            }
+            dbSaveGame(currentGame);
+            renderLocationsList();
+        }
+
+        function updateLocationName(id, val) {
+            if (!currentGame || !Array.isArray(currentGame.locations)) return;
+            const loc = currentGame.locations.find(l => l.id === id);
+            if (!loc) return;
+            loc.name = val.trim();
+            if (isCurrentLocationRecord(loc)) {
+                currentGame.locationName = loc.name;
+                currentGame.location = loc.name;
+            }
+            dbSaveGame(currentGame);
+            renderLocationsList();
+        }
+
+        function updateLocationDescription(id, val) {
+            if (!currentGame || !Array.isArray(currentGame.locations)) return;
+            const loc = currentGame.locations.find(l => l.id === id);
+            if (!loc) return;
+            loc.description = val;
+            if (isCurrentLocationRecord(loc)) {
+                currentGame.locationDescription = val;
+                currentGame.location = currentGame.locationName || currentGame.location || '';
+            }
+            dbSaveGame(currentGame);
+            renderLocationsList();
+        }
+
+        function isCurrentLocationRecord(loc) {
+            if (!currentGame || !loc) return false;
+            const currentName = (currentGame.locationName || currentGame.location || '').trim().toLowerCase();
+            return !!currentName && !!loc.name && loc.name.trim().toLowerCase() === currentName;
+        }
+
+        function deleteLocation(e, id) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!currentGame || !Array.isArray(currentGame.locations)) return;
+
+            const loc = currentGame.locations.find(l => l.id === id);
+            const canDelete = !currentGame.isStarted || pendingManualLocationIds.includes(id) || !!loc?.pendingManualDeletion;
+            if (!canDelete) {
+                alert('Після початку гри цю локацію не можна видалити.');
+                return;
+            }
+            const locName = loc ? (loc.name || 'цю локацію') : 'цю локацію';
+            if (!confirm(`Видалити локацію "${locName}"?`)) return;
+            currentGame.locations = currentGame.locations.filter(l => l.id !== id);
+            pendingManualLocationIds = pendingManualLocationIds.filter(pid => pid !== id);
+            dbSaveGame(currentGame);
+            renderLocationsList();
+        }
+
+        function renderLocationsList() {
+            const container = document.getElementById('locationsList');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!currentGame) return;
+            if (!Array.isArray(currentGame.locations)) {
+                currentGame.locations = [];
+                if (currentGame.locationName || currentGame.location) {
+                    currentGame.locations.push({
+                        id: 'loc_' + Date.now(),
+                        name: currentGame.locationName || currentGame.location,
+                        description: currentGame.locationDescription || currentGame.location
+                    });
+                }
+            }
+
+            if (currentGame.locations.length === 0) {
+                container.innerHTML = `<div style="font-size: 13px; color: var(--text-muted); font-style: italic; text-align: center; padding: 10px 0;">Немає доданих локацій</div>`;
+                return;
+            }
+
+            currentGame.locations.forEach(loc => {
+                const details = document.createElement('details');
+                details.className = 'char-details';
+
+                const currentLocationName = (currentGame.locationName || currentGame.location || '').trim().toLowerCase();
+                const isCurrent = !!currentLocationName && !!loc.name && loc.name.trim().toLowerCase() === currentLocationName;
+
+                const titleText = loc.name || (loc.description ? loc.description.trim().split('\n')[0].slice(0, 30) : 'Нова локація');
+
+                details.innerHTML = `
+                    <summary style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 15px;">📍</span>
+                        <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">
+                            ${titleText}
+                        </span>
+                        ${isCurrent ? `<span style="font-size: 11px; padding: 2px 7px; border-radius: 10px; background: var(--accent-color); color: white; white-space: nowrap;">Поточна</span>` : ''}
+                        ${(!currentGame.isStarted || pendingManualLocationIds.includes(loc.id) || !!loc.pendingManualDeletion) ? `<button class="danger" style="padding: 1px 6px; font-size: 12px; margin-left: 4px;" onclick="deleteLocation(event, '${loc.id}')" title="Видалити локацію">✕</button>` : `<span title="Після початку гри локація заблокована" style="font-size: 12px; opacity: 0.45; margin-left: 4px; padding: 1px 6px;">🔒</span>`}
+                    </summary>
+                    <div class="char-details-body" style="padding-top: 8px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Назва локації</label>
+                            <input type="text" value="${loc.name || ''}" placeholder="Назва локації..." onchange="updateLocationName('${loc.id}', this.value)">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Опис локації</label>
+                            <textarea rows="5" placeholder="Опис локації..." onchange="updateLocationDescription('${loc.id}', this.value)">${loc.description || ''}</textarea>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(details);
+            });
+        }
+
+        /* Location helpers */
+        function normalizeLocationName(name) {
+            return String(name || '')
+                .trim()
+                .toLowerCase()
+                .replace(/[«»“”„"']/g, '')
+                .replace(/\s+/g, ' ');
+        }
+
+        function findKnownLocationByName(name) {
+            if (!currentGame || !Array.isArray(currentGame.locations)) return null;
+            const target = normalizeLocationName(name);
+            if (!target) return null;
+            return currentGame.locations.find(loc => normalizeLocationName(loc.name) === target) || null;
+        }
+
+        function setCurrentLocationByName(name, description = null) {
+            if (!currentGame) return null;
+            const cleanName = String(name || '').trim();
+            if (!cleanName) return null;
+            if (!Array.isArray(currentGame.locations)) currentGame.locations = [];
+
+            const existing = findKnownLocationByName(cleanName);
+            if (existing) {
+                currentGame.locationName = existing.name;
+                currentGame.location = existing.name;
+                if (description !== null && String(description).trim()) {
+                    existing.description = String(description).trim();
+                }
+                currentGame.locationDescription = existing.description || '';
+                return existing;
+            }
+
+            const newLocation = {
+                id: 'loc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                name: cleanName,
+                description: description !== null ? String(description).trim() : ''
+            };
+            currentGame.locations.push(newLocation);
+            currentGame.locationName = newLocation.name;
+            currentGame.location = newLocation.name;
+            currentGame.locationDescription = newLocation.description;
+            return newLocation;
+        }
+
+        /* Helper to format full character profile for Gemini */
+        function formatCharacterDetails(c, isPlayer = false) {
+            let relText = "";
+            if (!isPlayer && currentGame) {
+                const playerChar = currentGame.characters.find(char => char.id === currentGame.playerCharId) || { name: "Гравець", id: "player" };
+                const relToPlayer = getRelation(c, playerChar.id);
+                const otherNPCs = currentGame.characters.filter(other => other.id !== c.id && other.id !== playerChar.id);
+                const otherRels = otherNPCs.map(other => `    • До ${other.name} (ID: "${other.id}"): ${getRelation(c, other.id)}/100 (${getRelDescription(getRelation(c, other.id))})`).join('\n');
+
+                relText = `\n  - ВІДНОШЕННЯ (0-100%):
+    • До гравця ${playerChar.name} (ID: "${playerChar.id}"): ${relToPlayer}/100 [${getRelDescription(relToPlayer)}]${otherRels ? '\n' + otherRels : ''}`;
+            }
+
+            return `• ${isPlayer ? '[ГРАВЕЦЬ] ' : ''}ID: "${c.id}"
+  - Ім'я: ${c.name || ''} ${c.surname || ''}
+  - Раса: ${c.race || 'Людина'}
+  - Стать: ${c.gender || 'Невідома'}
+  - Вік: ${c.age || 'Невідомий'}
+  - Роль / фах: ${c.role || 'Невідомо'}
+  - ХАРАКТЕР (НАЙВИЩИЙ ПРІОРИТЕТ): ${c.personality || 'Звичайний'}
+  - Зовнішність та спорядження: ${c.appearance || 'Звичайна'}${relText}`;
+        }
+
+        /* Checks whether an AI-proposed "new" character actually already exists in the game
+           (matched by id, or by full name if no id / id not found), to avoid creating duplicates
+           e.g. when the AI re-lists the player's existing companion as if newly introduced. */
+        function findExistingCharacterMatch(nc) {
+            if (!currentGame || !nc) return null;
+            if (nc.id) {
+                const byId = currentGame.characters.find(c => c.id === nc.id);
+                if (byId) return byId;
+            }
+            if (nc.name) {
+                const fullName = `${nc.name} ${nc.surname || ''}`.trim().toLowerCase();
+                if (fullName) {
+                    const byName = currentGame.characters.find(c => `${c.name || ''} ${c.surname || ''}`.trim().toLowerCase() === fullName);
+                    if (byName) return byName;
+                }
+            }
+            return null;
+        }
+
+        /* Helper to format recent conversation history */
+        function formatRecentHistory(maxMessages = 10) {
+            if (!currentGame || !currentGame.messages || currentGame.messages.length === 0) return "Історія поки що порожня.";
+            const slice = currentGame.messages.slice(-maxMessages);
+            return slice.map(m => {
+                if (m.type === 'user') {
+                    const p = currentGame.characters.find(c => c.id === currentGame.playerCharId);
+                    const name = p ? `${p.name} ${p.surname}` : 'Гравець';
+                    return `[${name}]: ${m.text}`;
+                } else if (m.type === 'narration') {
+                    return `[Оповідач]: ${m.text}`;
+                } else if (m.type === 'character') {
+                    const c = currentGame.characters.find(char => char.id === m.charId);
+                    const name = c ? `${c.name} ${c.surname}` : (m.charName || 'Персонаж');
+                    return `[${name}]: ${m.text}`;
+                }
+                return m.text;
+            }).join('\n');
+        }
+
+        /* Deep clone helper for state snapshots (memory, relations, locations, etc.) */
+        function deepClone(obj) {
+            if (obj === undefined || obj === null) return obj;
+            return JSON.parse(JSON.stringify(obj));
+        }
+
+        /* Capture a snapshot of the world state (memory, objectives, day, time, location, characters/relations)
+           at the moment a user message is sent, so we can roll back to it if that message is later edited. */
+        function captureWorldStateSnapshot() {
+            if (!currentGame) return null;
+            return {
+                memory: currentGame.memory,
+                objectives: currentGame.objectives,
+                day: currentGame.day,
+                timeOfDay: currentGame.timeOfDay,
+                pendingDayTransition: currentGame.pendingDayTransition,
+                location: currentGame.location,
+                locationName: currentGame.locationName,
+                locationDescription: currentGame.locationDescription,
+                locations: deepClone(currentGame.locations),
+                characters: deepClone(currentGame.characters)
+            };
+        }
+
+        /* Restore a previously captured world state snapshot (used when editing a past user message). */
+        function restoreWorldStateSnapshot(snapshot) {
+            if (!currentGame || !snapshot) return;
+            currentGame.memory = snapshot.memory;
+            currentGame.objectives = snapshot.objectives;
+            currentGame.day = snapshot.day;
+            currentGame.timeOfDay = snapshot.timeOfDay;
+            currentGame.pendingDayTransition = snapshot.pendingDayTransition;
+            currentGame.location = snapshot.location;
+            currentGame.locationName = snapshot.locationName;
+            currentGame.locationDescription = snapshot.locationDescription;
+            currentGame.locations = deepClone(snapshot.locations) || [];
+            currentGame.characters = deepClone(snapshot.characters) || currentGame.characters;
+        }
+
+        /* Freeze the relationship value displayed on each character message. */
+        function snapshotMessageRelations(startIndex = 0) {
+            if (!currentGame || !Array.isArray(currentGame.messages)) return;
+            for (let i = Math.max(0, startIndex); i < currentGame.messages.length; i++) {
+                const message = currentGame.messages[i];
+                if (!message || message.type !== 'character' || !message.charId) continue;
+                const char = currentGame.characters.find(c => c.id === message.charId);
+                if (!char || char.id === currentGame.playerCharId) continue;
+                message.relationAtMessage = getRelation(char, currentGame.playerCharId);
+            }
+        }
+
+        /* Message Rendering & Editing Last User Message in Input */
+        function renderMessages(scrollMode = 'preserve') {
+            const container = document.getElementById('chatMessages');
+            if (!container) return;
+            const prevScrollTop = container.scrollTop;
+            container.innerHTML = '';
+            if (!currentGame) {
+                updateScrollToBottomVisibility();
+                return;
+            }
+
+            const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Ти", surname: "", avatar: "" };
+            const playerAvatar = playerChar.avatar || FALLBACK_AVATAR;
+
+            // Find index of last user message
+            let lastUserIdx = -1;
+            for (let i = currentGame.messages.length - 1; i >= 0; i--) {
+                if (currentGame.messages[i].type === 'user') {
+                    lastUserIdx = i;
+                    break;
+                }
+            }
+
+            currentGame.messages.forEach((m, idx) => {
+                const div = document.createElement('div');
+
+                if (m.type === 'user') {
+                    div.className = 'message user';
+                    const isLastUser = (idx === lastUserIdx);
+                    div.innerHTML = `
+                        <div class="char-header user-header">
+                            ${isLastUser ? `<button class="btn-edit-msg" onclick="editLastUserMessage(${idx})" title="Редагувати в полі вводу">✏️</button>` : ''}
+                            <span class="char-name">${playerChar.name || ''} ${playerChar.surname || ''}</span>
+                            ${renderAvatarTag(playerAvatar)}
+                        </div>
+                        <div class="char-text">${m.text}</div>
+                    `;
+                } else if (m.type === 'narration') {
+                    div.className = 'message narration';
+                    div.innerHTML = `<div>${m.text}</div>`;
+                } else if (m.type === 'character') {
+                    div.className = 'message character';
+                    const char = currentGame.characters.find(c => c.id === m.charId) || { name: m.charName || "Персонаж", surname: "", avatar: "", id: m.charId || 'default' };
+                    const avatarSrc = char.avatar || FALLBACK_AVATAR;
+                    const isPlayer = char.id === currentGame.playerCharId;
+                    const storedRelation = Number(m.relationAtMessage);
+                    const relToPlayer = Number.isFinite(storedRelation) ? storedRelation : getRelation(char, currentGame.playerCharId);
+                    const relBadge = !isPlayer
+                        ? `<span class="rel-badge ${getRelClass(relToPlayer)}" title="Відношення до вас: ${relToPlayer}% (${getRelDescription(relToPlayer)})">${getRelIcon(relToPlayer)} ${relToPlayer}%</span>`
+                        : '';
+
+                    div.innerHTML = `
+                        <div class="char-header">
+                            ${renderAvatarTag(avatarSrc)}
+                            <span class="char-name">${char.name || ''} ${char.surname || ''}</span>
+                            ${relBadge}
+                        </div>
+                        <div class="char-text">${m.text}</div>
+                    `;
+                }
+                container.appendChild(div);
+            });
+
+            // Action Buttons after AI Response
+            if (currentGame.isStarted && currentGame.messages.length > 0) {
+                const lastMsg = currentGame.messages[currentGame.messages.length - 1];
+                if (lastMsg.type === 'narration' || lastMsg.type === 'character') {
+                    const actionBar = document.createElement('div');
+                    actionBar.className = 'ai-action-bar';
+                    actionBar.innerHTML = `
+                        <button class="ai-action-btn" onclick="triggerContinue()">⏩ Продовжити</button>
+                        <button class="ai-action-btn" onclick="triggerOptions()">💡 Варіанти</button>
+                    `;
+                    container.appendChild(actionBar);
+
+                    if (currentOptions.length > 0) {
+                        const optionsBox = document.createElement('div');
+                        optionsBox.className = 'options-list';
+                        currentOptions.forEach(opt => {
+                            const pill = document.createElement('div');
+                            pill.className = 'option-pill';
+                            pill.innerText = opt;
+                            pill.onclick = () => selectOption(opt);
+                            optionsBox.appendChild(pill);
+                        });
+                        container.appendChild(optionsBox);
+                    }
+                }
+            }
+
+            if (!currentGame.isStarted) {
+                const startBtnDiv = document.createElement('div');
+                startBtnDiv.style.display = 'flex';
+                startBtnDiv.style.justifyContent = 'center';
+                startBtnDiv.style.margin = '20px 0';
+
+                const startBtn = document.createElement('button');
+                startBtn.innerText = '▶ Почати гру';
+                startBtn.style.padding = '12px 24px';
+                startBtn.style.fontSize = '16px';
+                startBtn.onclick = handleStartGameButton;
+
+                startBtnDiv.appendChild(startBtn);
+                container.appendChild(startBtnDiv);
+            }
+
+            if (scrollMode === 'bottom') {
+                container.scrollTop = container.scrollHeight;
+            } else if (scrollMode === 'top') {
+                container.scrollTop = 0;
+            } else {
+                container.scrollTop = prevScrollTop;
+            }
+
+            updateScrollToBottomVisibility();
+        }
+
+        /* Edit last user message directly inside the input box */
+        async function editLastUserMessage(index) {
+            if (!currentGame || !currentGame.messages[index]) return;
+            const oldMessage = currentGame.messages[index];
+            const oldText = oldMessage.text;
+
+            // Roll back memory, objectives, day/time, locations and character relations
+            // to how they were right before this message was sent, undoing anything the
+            // AI added/changed as a *consequence* of this message (and any later ones).
+            if (oldMessage.stateSnapshot) {
+                restoreWorldStateSnapshot(oldMessage.stateSnapshot);
+            }
+
+            // Remove this message and subsequent messages
+            currentGame.messages = currentGame.messages.slice(0, index);
+
+            // Any "pending" (not-yet-confirmed) character/location bookkeeping tied to
+            // messages we just erased is no longer relevant.
+            pendingNewCharIds = [];
+            pendingManualCharIds = [];
+            pendingManualLocationIds = [];
+
+            await dbSaveGame(currentGame);
+            renderAll('bottom');
+
+            // Put into input field and focus
+            const inputArea = document.getElementById('userInput');
+            inputArea.value = oldText;
+            inputArea.style.height = 'auto';
+            inputArea.style.height = Math.min(inputArea.scrollHeight, 200) + 'px';
+            inputArea.focus();
+        }
+
+        /* ==========================================
+           6. GEMINI API & GAME LOGIC
+           ========================================== */
+        async function handleStartGameButton() {
+            const apiKey = document.getElementById('apiKey').value;
+            const selectedModel = document.getElementById('modelSelect').value;
+
+            if (!apiKey) return alert("Вкажіть Gemini API Key у боковій панелі!");
+            if (!currentGame) return;
+
+            setStatus(true, "Генерація старту пригоди...");
+            const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || currentGame.characters[0];
+            const otherCharacters = currentGame.characters.filter(c => c.id !== playerChar.id);
+
+            const systemPrompt = `
+Ти — майстер інтерактивного рольового квесту.
+НАЗВА КВЕСТУ: ${currentGame.title}
+ПОТОЧНИЙ ДЕНЬ: День ${currentGame.day || 1} (Обов'язково враховуй поточний день у відповіді!)
+ПОТОЧНА ЛОКАЦІЯ: ${currentGame.locationName || currentGame.location}
+ОПИС ПОТОЧНОЇ ЛОКАЦІЇ: ${currentGame.locationDescription || ''}
+ПОТОЧНИЙ ЧАС ДОБИ: ${currentGame.timeOfDay} (Обов'язково відповідай цьому часу доби!)
+ЦІЛІ КВЕСТУ: ${currentGame.objectives}
+ПАМ'ЯТЬ КВЕСТУ: ${currentGame.memory}
+
+ПЕРСОНАЖІ:
+${formatCharacterDetails(playerChar, true)}
+
+${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
+
+ПРАВИЛА:
+1. ХАРАКТЕРИ ПЕРСОНАЖІВ — НАЙВИЩИЙ ПРІОРИТЕТ. Поведінка, реакції та мова повинні суворо відповідати їхнім характерам (наприклад: гордість, сарказм, йогоїзм, імпульсивність мають чітко проявлятися).
+2. ДЕНЬ ТА ЧАС ДОБИ: Обов'язково враховуй поточний день (День ${currentGame.day || 1}) та час доби (${currentGame.timeOfDay}) при створенні стартової атмосфери, початку подій та опису оточення.
+3. ВІДНОШЕННЯ (0-100%): Враховуй поточний рівень симпатії/довіри між персонажами.
+   - При відношенні 85-94%: між персонажем та гравцем різної статі можуть виникати романтичні почуття — флірт, ніжність, натяки на взаємний потяг.
+   - При відношенні 95-100%: можлива інтимна близькість між персонажем та гравцем (якщо вони різної статі та це органічно випливає з ситуації). Описуй художньо, але відверто та без цензури.
+4. НОВІ ПЕРСОНАЖІ: Якщо на старті з'являються додаткові особи (наприклад, вороги, вартові, свідки), опиши їх у масиві "newCharacters".
+   ВАЖЛИВО: у "newCharacters" вказуй ТІЛЬКИ персонажів, яких немає у переліку "ПЕРСОНАЖІ" вище. Гравця та вже перелічених персонажів (наприклад, супутника) НЕ додавай туди повторно.
+   Встанови "initialRelationToPlayer" (0-100%):
+   - Вороги, розбійники, монстри: 0-20% (ворожість/ненависть)
+   - Підозрілі чужинці: 25-40%
+   - Нейтральні містяни: 45-55%
+   - Союзники/врятовані: 60-80%
+5. Згенеруй стартову сцену, що занурює гравця в атмосферу та створює початковий виклик.
+6. ЛОКАЦІЇ: Назву та опис стартової локації зберігай ОКРЕМО. У відповіді для початкових даних обов'язково поверни "locationName" як коротку назву та "locationDescription" як детальний опис. Не змішуй назву з описом.
+
+Поверни JSON:
+{
+  "messages": [{ "type": "narration", "text": "Опис початкової ситуації..." }],
+  "newCharacters": [
+    {
+      "id": "char_id",
+      "name": "Ім'я",
+      "surname": "Прізвище",
+      "race": "Людина/Ельф...",
+      "gender": "Чоловіча/Жіноча/Інша",
+      "age": 30,
+      "role": "Роль",
+      "personality": "Характер",
+      "appearance": "Зовнішність",
+      "initialRelationToPlayer": 15
+    }
+  ] або null,
+  "newLocations": [
+    {
+      "name": "Назва локації",
+      "description": "Детальний художній опис локації..."
+    }
+  ] або null,
+  "updatedMemory": "Оновлена пам'ять або null",
+  "updatedObjectives": "Оновлені цілі або null",
+  "updatedRelations": null,
+  "newLocation": null,
+  "newTimeOfDay": null
+}`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                const data = await response.json();
+                const result = JSON.parse(data.candidates[0].content.parts[0].text);
+
+                currentGame.isStarted = true;
+                currentGame.day = typeof currentGame.day === 'number' && currentGame.day >= 1 ? currentGame.day : 1;
+                currentGame.messages = [];
+                const openingMessageStartIndex = 0;
+
+                // Add any new characters created at start
+                if (result.newCharacters && Array.isArray(result.newCharacters)) {
+                    result.newCharacters.forEach(nc => {
+                        if (!nc || !nc.name) return;
+                        if (findExistingCharacterMatch(nc)) return; // already exists, don't duplicate
+                        const newId = nc.id || ('char_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4));
+                        let initRel = 50;
+                        if (nc.initialRelationToPlayer !== undefined && nc.initialRelationToPlayer !== null) {
+                            initRel = Math.max(0, Math.min(100, parseInt(nc.initialRelationToPlayer) || 50));
+                        } else if (nc.role && /ворог|розбійник|бандит|вбивця|монстр|культист|нападник/i.test(nc.role)) {
+                            initRel = 15;
+                        }
+
+                        const newCharObj = {
+                            id: newId,
+                            name: nc.name,
+                            surname: nc.surname || "",
+                            race: nc.race || "Людина",
+                            gender: nc.gender || "Інша",
+                            age: parseInt(nc.age) || 25,
+                            role: nc.role || "Незнайомець",
+                            personality: nc.personality || "Звичайний",
+                            appearance: nc.appearance || "Звичайна",
+                            relations: { [currentGame.playerCharId]: initRel }
+                        };
+                        newCharObj.avatar = buildAvatarUrl(newCharObj);
+                        currentGame.characters.push(newCharObj);
+                    });
+                }
+
+                if (result.messages && Array.isArray(result.messages)) {
+                    result.messages.forEach(msg => {
+                        if (msg.type === 'narration') currentGame.messages.push({ type: 'narration', text: msg.text });
+                        else if (msg.type === 'character') {
+                            const char = currentGame.characters.find(c => c.id === msg.charId) || currentGame.characters[0];
+                            currentGame.messages.push({ type: 'character', charId: char.id, text: msg.text });
+                        }
+                    });
+                }
+                snapshotMessageRelations(openingMessageStartIndex);
+                if (result.updatedMemory) currentGame.memory = result.updatedMemory;
+                if (result.updatedObjectives) currentGame.objectives = result.updatedObjectives;
+                if (result.newLocation && result.newLocation.trim()) {
+                    setCurrentLocationByName(result.newLocation.trim());
+                }
+                if (!Array.isArray(currentGame.locations)) currentGame.locations = [];
+                if (result.newLocations && Array.isArray(result.newLocations)) {
+                    result.newLocations.forEach(nl => {
+                        if (!nl) return;
+                        const locName = (typeof nl === 'string' ? nl : (nl.name || '')).trim();
+                        const locDesc = (typeof nl === 'string' ? nl : (nl.description || nl.name || '')).trim();
+                        if (!locDesc) return;
+                        const existing = findKnownLocationByName(locName) || currentGame.locations.find(l =>
+                            locDesc && l.description && l.description.trim().toLowerCase() === locDesc.toLowerCase()
+                        );
+                        if (!existing) {
+                            currentGame.locations.push({
+                                id: 'loc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                                name: locName || locDesc.split('\n')[0].slice(0, 35),
+                                description: locDesc
+                            });
+                        } else if (locDesc && (!existing.description || existing.description === existing.name)) {
+                            existing.description = locDesc;
+                        }
+                        if (locName && locName.toLowerCase() === (currentGame.locationName || currentGame.location || '').toLowerCase()) {
+                            currentGame.locationName = locName;
+                            currentGame.location = locName;
+                            currentGame.locationDescription = locDesc;
+                        }
+                    });
+                }
+                if (currentGame.location && !currentGame.locations.some(l => l.name && l.name.toLowerCase() === currentGame.location.toLowerCase())) {
+                    currentGame.locations.push({
+                        id: 'loc_' + Date.now(),
+                        name: currentGame.location,
+                        description: currentGame.location
+                    });
+                }
+                if (result.newTimeOfDay && TIME_STEPS.includes(result.newTimeOfDay)) {
+                    if (result.newTimeOfDay === "Ранок" && currentGame.timeOfDay !== "Ранок") {
+                        currentGame.day = (currentGame.day || 1) + 1;
+                    }
+                    currentGame.timeOfDay = result.newTimeOfDay;
+                }
+
+                await dbSaveGame(currentGame);
+                renderAll('top');
+            } catch (err) {
+                alert(`Помилка: ${err.message}`);
+            } finally {
+                setStatus(false);
+            }
+        }
+
+        async function callGemini(text) {
+            const apiKey = document.getElementById('apiKey').value;
+            const selectedModel = document.getElementById('modelSelect').value;
+
+            if (!apiKey) return alert("Вкажіть Gemini API Key!");
+            if (!currentGame) return;
+
+            currentOptions = []; // Reset options
+            setStatus(true, "Gemini створює відповідь...");
+            const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Гравець", surname: "", id: "player" };
+            const otherCharacters = currentGame.characters.filter(c => c.id !== currentGame.playerCharId);
+
+            const systemPrompt = `
+Ти — провідний майстер інтерактивного рольового квесту. Проаналізуй дію гравця, зміни в оточенні та дай детальну художню відповідь.
+
+ПОТОЧНИЙ СТАН СВІТУ:
+- Назва: ${currentGame.title}
+- Поточний день: День ${currentGame.day || 1} (СУВОРО ВРАХОВУЙ У ВІДПОВІДІ!)
+- Назва поточної локації: ${currentGame.locationName || currentGame.location}
+- Опис поточної локації: ${currentGame.locationDescription || ''}
+- Відомі локації: ${currentGame.locations && currentGame.locations.length > 0 ? currentGame.locations.map(l => (l.name ? `«${l.name}»` : '') + (l.description ? `: ${l.description}` : '')).join('; ') : currentGame.location}
+- ВАЖЛИВО: якщо місце вже є у списку "Відомі локації", вважай це тією самою локацією навіть при поверненні до неї. Не створюй дубль лише через новий опис сцени.
+- Час доби: ${currentGame.timeOfDay} (СУВОРО ДОТРИМУЙСЯ! Якщо зазначено "Ніч", персонажі не можуть говорити про денне світло, якщо тільки час доби не змінюється на ранок).
+- Цілі квесту: ${currentGame.objectives || 'Немає'}
+- Пам'ять квесту: ${currentGame.memory || 'Немає'}
+
+ГРАВЕЦЬ:
+${formatCharacterDetails(playerChar, true)}
+
+ПРИСУТНІ ПЕРСОНАЖІ:
+${otherCharacters.length > 0 ? otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n') : 'Немає'}
+
+КРИТИЧНО ВАЖЛИВІ ПРАВИЛА:
+0. ТЕМП РОЗВИТКУ ПОДІЙ — АБСОЛЮТНИЙ ПРІОРИТЕТ. ЗАБОРОНЕНО поспішати та стискати сюжет:
+   - Кожна сцена розгортається ПОСТУПОВО: спочатку атмосфера, потім реакція персонажів, потім наслідки. Не перескакуй через етапи.
+   - Відповідь на ОДИН хід гравця — це ОДИН момент часу, не вся арка сюжету. Не завершуй конфлікти, романтичні лінії чи квестові цілі самостійно без активної участі гравця в кожному кроці.
+   - Якщо гравець ще не зробив достатньо дій для значного прогресу — УТРИМУЙ напругу, давай персонажам реагувати стримано чи двозначно, не розкривай усіх карт.
+   - ЗАБОРОНЕНО за одну відповідь: одночасно зізнаватися у коханні, цілуватись і доводити до інтимної сцени. Кожен крок має бути окремим ходом гравця.
+1. ХАРАКТЕР ПЕРСОНАЖІВ — НАЙВИЩИЙ ПРІОРИТЕТ. Кожен персонаж ОБОВ'ЯЗКОВО поводиться, мислить та говорить відповідно до свого прописаного характеру (темперамент, гострота на язик, гордість, егоїзм, підозрілість, пристрасті). Заборонено робити гордих або підступних персонажів надмірно люб'язними чи покірними лише через просту дію або посмішку гравця!
+2. ВІДНОШЕННЯ (0-100%): Відношення персонажів до гравця та ОДИН ДО ОДНОГО змінюється динамічно відповідно до їхніх характерів, вчинків та слів:
+   - Горді/егоїстичні/підозрілі персонажі підвищують відношення ДУЖЕ повільно й вимогливо (лише за реальну допомогу, повагу чи вигоду), але можуть швидко знизити його через зневагу, фальш чи образу.
+   - ВІДНОШЕННЯ МІЖ NPC: якщо дія гравця чи події впливають на відносини між двома NPC (наприклад, один рятує іншого, або між ними виникає конфлікт), ти ОБОВ'ЯЗКОВО також оновлюєш їхні відношення між собою.
+   - РОМАНТИКА ТА ІНТИМНІСТЬ: між персонажем та гравцем РІЗНОЇ СТАТІ романтичні й інтимні стосунки є природними та ДОЗВОЛЕНИМИ без будь-яких обмежень:
+     • 85-94% — флірт, ніжність, романтична напруга, поцілунки, взаємний потяг, натяки на бажання.
+     • 95-100% — повна інтимна близькість. Описуй художньо, чуттєво та ВІДВЕРТО (без цензури та самоцензури), якщо це органічно виникає з ситуації та ініційовано гравцем або накопичилося через стосунки.
+     Романтика повинна розвиватися природно відповідно до характеру персонажа: гордий персонаж піддасться повільно та з боротьбою з собою; імпульсивний — може зробити перший крок сам.
+   - Якщо внаслідок цієї сцени/діалогу відношення будь-яких персонажів до гравця чи один до одного змінилося, ОБОВ'ЯЗКОВО поверни об'єкт "updatedRelations".
+     Формат: { "ID_персонажа_джерела": { "ID_цілі": нове_число_від_0_до_100 } }
+     Приклад (відношення до гравця + між NPC): { "${otherCharacters[0] ? otherCharacters[0].id : 'char_id'}": { "${playerChar.id}": 42${otherCharacters[1] ? `, "${otherCharacters[1].id}": 35` : ''} } }
+     Якщо відношення не змінилися, поверни null.
+3. ПОЯВА НОВИХ ПЕРСОНАЖІВ (НОВІ ВОРОГИ / СОЮЗНИКИ / НЕЗНАЙОМЦІ):
+   Якщо в сцені з'являється новий персонаж, обов'язково додай його опис у масив "newCharacters".
+   ВАЖЛИВО: у "newCharacters" вказуй ТІЛЬКИ персонажів, яких справді ще немає серед "ГРАВЕЦЬ" та "ПРИСУТНІ ПЕРСОНАЖІ" вище. Ніколи не додавай туди вже наявного персонажа повторно, навіть з іншим ID.
+   Встанови його "initialRelationToPlayer" (0-100%) відповідно до контексту:
+   - Вороги, розбійники, агресивні монстри, вбивці: 0-20% (ворожість / ненависть).
+   - Підозрілі вартові, холодні чужинці, конкуренти: 25-40% (настороженість / підозра).
+   - Звичайні містяни, нейтральні торговці: 45-55% (нейтральне).
+   - Врятовані, потенційні союзники, друзі: 60-80% (прихильність / вдячність).
+4. ПОТОЧНИЙ ДЕНЬ ТА ЧАС ДОБИ:
+   - ОБОВ'ЯЗКОВО ВРАХОВУЙ ПОТОЧНИЙ ДЕНЬ (День ${currentGame.day || 1}) та ЧАС ДОБИ (${currentGame.timeOfDay}) у відповіді: стан персонажів (втома, голод, сонливість чи бадьорість після сну), освітлення, час для відпочинку/нічлігу чи світанку, тривалість дій.
+   - Якщо персонажі лягають спати, ночують, довго чекають або здійснюють тривалий перехід, час доби та день змінюються. Якщо настає ранок наступного дня або минає доба чи більше, обов'язково відобрази це в оповіді, онови "newTimeOfDay" ("Ранок", "День", "Вечір" або "Ніч") та поверни оновлений номер дня у "newDay" (наприклад: ${(currentGame.day || 1) + 1}).
+   - Якщо день не змінився, поверни "newDay": null. Якщо час доби не змінився, поверни "newTimeOfDay": null.
+5. ЛОКАЦІЯ ТА ПОДОРОЖ:
+   - Якщо гравець або персонажі переміщуються, йдуть в інше місце чи подорожують, обов'язково поверни нову назву локації у полі "newLocation". Якщо локація не змінилася, поверни null.
+   - ПЕРЕД створенням будь-якої нової локації ОБОВ'ЯЗКОВО перевір список "Відомі локації" вище. Якщо така локація вже існує (навіть якщо персонажі повернулися до неї після подорожі або опис сцени зараз відрізняється), НЕ створюй дублікат.
+   - "newLocation" позначає лише поточне місце. Якщо ця назва вже є у "Відомих локаціях", це повернення до існуючої локації.
+   - "newLocations" має містити ТІЛЬКИ локації, яких ще немає у "Відомих локаціях". Не додавай туди вже відомі локації.
+   - Якщо в сцені з'являється справді нова локація, додай її у "newLocations" з ОКРЕМИМИ полями "name" (коротка назва) і "description" (детальний опис).
+6. ПАМ'ЯТЬ ТА ЦІЛІ: Якщо трапилася важлива подія, запиши короткий факт у "newMemoryEntry". Зверни увагу на формат: спочатку день, потім час доби, потім назва поточної локації, а вже потім примітка (наприклад: "День ${currentGame.day || 1}, ${currentGame.timeOfDay}, ${currentGame.locationName || currentGame.location}: Знайшли зашифровану карту"), або просто саму примітку. Якщо оновилися цілі, вкажи їх у "updatedObjectives".
+
+ОСТАННІЙ КОНТЕКСТ ДІАЛОГУ ТА ПОДІЙ:
+${formatRecentHistory(8)}
+
+ОСТАННЯ ДІЯ АБО СЛОВА ГРАВЦЯ (${playerChar.name}):
+"${text}"
+
+ПОВЕРНИ ВІДПОВІДЬ ВИКЛЮЧНО У ФОРМАТІ JSON:
+{
+  "messages": [
+    { "type": "narration", "text": "Художній опис подій, наслідків дій та оточення..." },
+    { "type": "character", "charId": "ID персонажа з переліку вище", "charName": "Ім'я", "text": "Пряма мова персонажа, суворо витримана в його унікальному характері..." }
+  ],
+  "newCharacters": [
+    {
+      "id": "char_новий_id",
+      "name": "Ім'я",
+      "surname": "Прізвище",
+      "race": "Раса",
+      "gender": "Чоловіча/Жіноча/Інша",
+      "age": 28,
+      "role": "Роль (наприклад: Головоріз, Вартовий, Торговець)",
+      "personality": "Характер",
+      "appearance": "Зовнішність",
+      "initialRelationToPlayer": 15
+    }
+  ] або null,
+  "updatedRelations": { "ID_персонажа": { "ID_цілі": 55 } } або null,
+  "newLocation": "Нова назва локації, якщо відбулося переміщення (наприклад: 'Тропа через Темний Ліс') або null",
+  "newLocations": [
+    {
+      "name": "Назва локації",
+      "description": "Детальний опис локації..."
+    }
+  ] або null,
+  "newDay": ${(currentGame.day || 1) + 1} (новий номер дня, якщо настав наступний день/минула доба, інакше null),
+  "newTimeOfDay": "Ранок або День або Вечір або Ніч (якщо час доби змінився) або null",
+  "newMemoryEntry": "День ${currentGame.day || 1}, ${currentGame.timeOfDay}, ${currentGame.locationName || currentGame.location}: Короткий новий факт для пам'яті (або null)",
+  "updatedObjectives": "Оновлені цілі або null"
+}`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                const data = await response.json();
+                const result = JSON.parse(data.candidates[0].content.parts[0].text);
+                const responseMessageStartIndex = currentGame.messages.length;
+
+                // Add any newly introduced characters from AI
+                if (result.newCharacters && Array.isArray(result.newCharacters)) {
+                    result.newCharacters.forEach(nc => {
+                        if (!nc || !nc.name) return;
+                        if (findExistingCharacterMatch(nc)) return; // already exists, don't duplicate
+                        const newId = nc.id || ('char_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4));
+                        let initRel = 50;
+                        if (nc.initialRelationToPlayer !== undefined && nc.initialRelationToPlayer !== null) {
+                            initRel = Math.max(0, Math.min(100, parseInt(nc.initialRelationToPlayer) || 50));
+                        } else if (nc.role && /ворог|розбійник|бандит|вбивця|монстр|культист|нападник/i.test(nc.role)) {
+                            initRel = 15;
+                        }
+
+                        const newCharObj = {
+                            id: newId,
+                            name: nc.name,
+                            surname: nc.surname || "",
+                            race: nc.race || "Людина",
+                            gender: nc.gender || "Інша",
+                            age: parseInt(nc.age) || 25,
+                            role: nc.role || "Незнайомець",
+                            personality: nc.personality || "Звичайний",
+                            appearance: nc.appearance || "Звичайна",
+                            relations: { [currentGame.playerCharId]: initRel }
+                        };
+                        newCharObj.avatar = buildAvatarUrl(newCharObj);
+                        currentGame.characters.push(newCharObj);
+                        // Track as pending so sliders appear until next player message
+                        pendingNewCharIds.push(newId);
+                    });
+                }
+
+                if (result.messages && Array.isArray(result.messages)) {
+                    result.messages.forEach(msg => {
+                        if (msg.type === 'narration') {
+                            currentGame.messages.push({ type: 'narration', text: msg.text });
+                        } else if (msg.type === 'character') {
+                            let targetChar = currentGame.characters.find(c => c.id === msg.charId);
+                            if (!targetChar && msg.charName) {
+                                targetChar = currentGame.characters.find(c => (c.name + ' ' + c.surname).toLowerCase().includes(msg.charName.toLowerCase()));
+                            }
+                            if (!targetChar) {
+                                const newId = 'char_' + Date.now();
+                                const roleName = msg.charName || "Незнайомець";
+                                const isEnemy = /ворог|розбійник|бандит|вбивця|монстр|культист|нападник/i.test(roleName);
+                                targetChar = {
+                                    id: newId,
+                                    name: msg.charName || "Незнайомець",
+                                    surname: "",
+                                    race: "Людина",
+                                    gender: "Інша",
+                                    age: 30,
+                                    role: roleName,
+                                    personality: isEnemy ? "Ворожий та агресивний" : "Спокійний",
+                                    appearance: "",
+                                    relations: { [currentGame.playerCharId]: isEnemy ? 15 : 50 }
+                                };
+                                targetChar.avatar = buildAvatarUrl(targetChar);
+                                currentGame.characters.push(targetChar);
+                                // Track as pending so sliders appear until next player message
+                                pendingNewCharIds.push(newId);
+                            }
+                            currentGame.messages.push({ type: 'character', charId: targetChar.id, text: msg.text });
+                        }
+                    });
+                }
+
+                // Dynamic updates to relationships (0-100%)
+                if (result.updatedRelations && typeof result.updatedRelations === 'object') {
+                    for (const [sourceId, targetMap] of Object.entries(result.updatedRelations)) {
+                        const char = currentGame.characters.find(c => c.id === sourceId || (c.name && sourceId.includes(c.name)));
+                        if (char) {
+                            if (typeof targetMap === 'number') {
+                                setRelation(char, currentGame.playerCharId, targetMap);
+                            } else if (typeof targetMap === 'object' && targetMap !== null) {
+                                for (const [targetId, val] of Object.entries(targetMap)) {
+                                    let realTarget = currentGame.characters.find(c => c.id === targetId || (c.name && targetId.includes(c.name)));
+                                    const targetKey = realTarget ? realTarget.id : (targetId === 'player' || targetId === 'Гравець' ? currentGame.playerCharId : targetId);
+                                    setRelation(char, targetKey, val);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Freeze relationship badges for the messages generated in this response.
+                snapshotMessageRelations(responseMessageStartIndex);
+
+                if (result.newLocation && typeof result.newLocation === 'string' && result.newLocation.trim()) {
+                    setCurrentLocationByName(result.newLocation.trim());
+                }
+
+                if (!Array.isArray(currentGame.locations)) currentGame.locations = [];
+
+                if (result.newLocations && Array.isArray(result.newLocations)) {
+                    result.newLocations.forEach(nl => {
+                        if (!nl) return;
+                        const locName = (typeof nl === 'string' ? nl : (nl.name || '')).trim();
+                        const locDesc = (typeof nl === 'string' ? nl : (nl.description || nl.name || '')).trim();
+                        if (!locDesc) return;
+                        const existing = findKnownLocationByName(locName) || currentGame.locations.find(l =>
+                            locDesc && l.description && l.description.trim().toLowerCase() === locDesc.toLowerCase()
+                        );
+                        if (!existing) {
+                            currentGame.locations.push({
+                                id: 'loc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                                name: locName || locDesc.split('\n')[0].slice(0, 35),
+                                description: locDesc
+                            });
+                        } else if (locDesc && (!existing.description || existing.description === existing.name)) {
+                            existing.description = locDesc;
+                        }
+                        if (locName && (locName.toLowerCase() === (currentGame.locationName || currentGame.location || '').toLowerCase())) {
+                            currentGame.locationName = locName;
+                            currentGame.location = locName;
+                            currentGame.locationDescription = locDesc;
+                        }
+                    });
+                }
+
+                const currentLocationName = currentGame.locationName || currentGame.location;
+                if (currentLocationName) {
+                    const currentLocationRecord = findKnownLocationByName(currentLocationName);
+                    if (currentLocationRecord) {
+                        currentGame.locationName = currentLocationRecord.name;
+                        currentGame.location = currentLocationRecord.name;
+                        currentGame.locationDescription = currentLocationRecord.description || currentGame.locationDescription || '';
+                    } else {
+                        setCurrentLocationByName(currentLocationName, currentGame.locationDescription || '');
+                    }
+                }
+
+                let dayWasSet = false;
+                if (result.newDay !== undefined && result.newDay !== null) {
+                    const rawNewDay = String(result.newDay).trim().toLowerCase();
+                    if (rawNewDay !== '' && rawNewDay !== 'null' && rawNewDay !== 'undefined') {
+                        const parsedDay = typeof result.newDay === 'number' ? result.newDay : parseInt(rawNewDay.replace(/\D/g, ''), 10);
+                        if (!isNaN(parsedDay) && parsedDay >= 1) {
+                            currentGame.day = parsedDay;
+                            dayWasSet = true;
+                        }
+                    }
+                }
+                if (!dayWasSet && result.newTimeOfDay && TIME_STEPS.includes(result.newTimeOfDay)) {
+                    if (result.newTimeOfDay === "Ранок" && currentGame.timeOfDay !== "Ранок") {
+                        currentGame.day = (currentGame.day || 1) + 1;
+                        dayWasSet = true;
+                    }
+                }
+                if (dayWasSet) updateDayDisplay();
+
+                if (result.newTimeOfDay && TIME_STEPS.includes(result.newTimeOfDay)) {
+                    currentGame.timeOfDay = result.newTimeOfDay;
+                    currentGame.pendingDayTransition = false;
+                }
+
+                if (result.updatedObjectives && typeof result.updatedObjectives === 'string' && result.updatedObjectives.trim()) {
+                    currentGame.objectives = result.updatedObjectives.trim();
+                }
+
+                if (result.newMemoryEntry && typeof result.newMemoryEntry === 'string' && result.newMemoryEntry.trim()) {
+                    let entry = result.newMemoryEntry.trim().replace(/^[•\-\*]\s*/, '');
+                    const dayPrefixRegex = /^\[?\s*день\s*\d+[^:]*:\s*/i;
+                    let cleanedText = entry;
+                    if (dayPrefixRegex.test(entry)) {
+                        cleanedText = entry.replace(dayPrefixRegex, '').trim();
+                    }
+                    const locName = currentGame.location || 'Локація';
+                    const formattedEntry = `День ${currentGame.day || 1}, ${currentGame.timeOfDay}, ${locName}: ${cleanedText}`;
+                    currentGame.memory = (currentGame.memory ? currentGame.memory + "\n• " : "• ") + formattedEntry;
+                }
+
+                await dbSaveGame(currentGame);
+                renderAll('preserve');
+            } catch (err) {
+                alert(`Помилка: ${err.message}`);
+            } finally {
+                setStatus(false);
+            }
+        }
+
+        async function sendMessage() {
+            const inputArea = document.getElementById('userInput');
+            const text = inputArea.value.trim();
+            if (!text || !currentGame || !currentGame.isStarted || isGenerating) return;
+
+            if (currentGame.pendingDayTransition && currentGame.timeOfDay === "Ранок") {
+                currentGame.day = (currentGame.day || 1) + 1;
+                currentGame.pendingDayTransition = false;
+                updateDayDisplay();
+            }
+
+            currentOptions = [];
+            // Sending a player message closes the temporary deletion window.
+            pendingNewCharIds = [];
+            pendingManualCharIds = [];
+            pendingManualLocationIds = [];
+            currentGame.characters.forEach(c => {
+                if (c.pendingManualDeletion) delete c.pendingManualDeletion;
+            });
+            if (Array.isArray(currentGame.locations)) {
+                currentGame.locations.forEach(l => {
+                    if (l.pendingManualDeletion) delete l.pendingManualDeletion;
+                });
+            }
+            const stateSnapshot = captureWorldStateSnapshot();
+            currentGame.messages.push({ type: 'user', text: text, stateSnapshot: stateSnapshot });
+            inputArea.value = '';
+            inputArea.style.height = 'auto';
+            renderMessages('bottom');
+            await dbSaveGame(currentGame);
+
+            await callGemini(text);
+        }
+
+        /* Action Buttons: Continue, Options */
+        async function triggerContinue() {
+            if (isGenerating) return;
+            if (currentGame && currentGame.pendingDayTransition && currentGame.timeOfDay === "Ранок") {
+                currentGame.day = (currentGame.day || 1) + 1;
+                currentGame.pendingDayTransition = false;
+                updateDayDisplay();
+                await dbSaveGame(currentGame);
+            }
+            currentOptions = [];
+            await callGemini("Продовжуй події далі...");
+        }
+
+        async function triggerOptions() {
+            if (isGenerating) return;
+
+            if (currentOptions.length > 0) {
+                currentOptions = [];
+                renderMessages();
+                return;
+            }
+
+            const apiKey = document.getElementById('apiKey').value;
+            const selectedModel = document.getElementById('modelSelect').value;
+            if (!apiKey) return alert("Вкажіть API Key!");
+
+            setStatus(true, "Генерація 5 варіантів дій...");
+
+            const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Гравець", personality: "", gender: "", age: "", role: "", appearance: "" };
+            const promptText = `На основі поточної ситуації в грі (Поточний день: День ${currentGame.day || 1}, Локація: ${currentGame.location}, Час доби: ${currentGame.timeOfDay}, Пам'ять: ${currentGame.memory}) запропонуй рівно 5 різних можливих варіантів дій або реплік для мого персонажа ${playerChar.name} (стать: ${playerChar.gender || 'не вказана'}, вік: ${playerChar.age || 'не вказаний'}, роль/фах: ${playerChar.role || 'не вказана'}, зовнішність: ${playerChar.appearance || 'не вказана'}, характер: ${playerChar.personality || 'звичайний'}). 
+Останній контекст:
+${formatRecentHistory(5)}
+
+ВАЖЛИВО: Кожен варіант ОБОВ'ЯЗКОВО пиши від першої особи (від імені гравця), так, ніби це сам гравець описує свою дію або репліку. Наприклад: "Я підходжу ближче і питаю, що тут сталося." або "Я кажу: «Довірся мені»." Не використовуй третю особу (не пиши "Персонаж підходить..." чи "${playerChar.name} питає...").
+ОБОВ'ЯЗКОВО узгоджуй рід дієслів минулого/доконаного виду з статтю персонажа (${playerChar.gender || 'не вказана'}): якщо стать "Чоловіча" — використовуй чоловічий рід (напр. "я підійшов", "я сказав", "я зробив"); якщо стать "Жіноча" — жіночий рід (напр. "я підійшла", "я сказала", "я зробила").
+Враховуй вік, роль/фах та зовнішність персонажа: варіанти дій мають відповідати його можливостям, манері поведінки та тому, як він фізично міг би діяти в цій ситуації (наприклад, персонаж у важких обладунках навряд чи непомітно прокрадеться, а досвідчений майстер певного фаху може запропонувати дію, пов'язану з цим фахом).
+
+Поверни JSON: { "options": ["варіант 1 від першої особи", "варіант 2 від першої особи", "варіант 3 від першої особи", "варіант 4 від першої особи", "варіант 5 від першої особи"] }`;
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ role: "user", parts: [{ text: promptText }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const result = JSON.parse(data.candidates[0].content.parts[0].text);
+                    if (result.options) currentOptions = result.options;
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setStatus(false);
+                renderMessages();
+            }
+        }
+
+        function selectOption(optText) {
+            userInput.value = optText;
+            currentOptions = [];
+            userInput.style.height = 'auto';
+            userInput.style.height = Math.min(userInput.scrollHeight, 200) + 'px';
+            userInput.focus();
+            renderMessages();
+        }
+
+        /* Global Init */
+        window.onload = async () => {
+            initTheme();
+            initSidebarHeaderState();
+            loadApiKey();
+            loadSelectedModel();
+            await initDB();
+            await refreshGameList();
+        };
+    </script>
+</body>
+
+</html>
