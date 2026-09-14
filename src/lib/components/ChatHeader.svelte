@@ -50,13 +50,6 @@
 		min-width: 0;
 		flex: 1;
 	}
-	h2 {
-		font-size: 18px;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		margin: 0;
-	}
 	.header-actions {
 		display: flex;
 		align-items: center;
