@@ -1,12 +1,12 @@
 <script lang="ts">
-	import type { Game } from '$lib/types';
+	import type { Game } from "$lib/types";
 	import {
 		updateGameState,
 		addNewCharacter,
-		addNewLocation
-	} from '$lib/stores/game.svelte';
-	import CharacterCard from './CharacterCard.svelte';
-	import LocationCard from './LocationCard.svelte';
+		addNewLocation,
+	} from "$lib/stores/game.svelte";
+	import CharacterCard from "./CharacterCard.svelte";
+	import LocationCard from "./LocationCard.svelte";
 
 	interface Props {
 		game: Game;
@@ -63,7 +63,7 @@
 			<label for="stateTimeOfDay">Час доби</label>
 			<select
 				id="stateTimeOfDay"
-				value={game.timeOfDay || 'День'}
+				value={game.timeOfDay || "День"}
 				onchange={handleTimeOfDayChange}
 			>
 				<option value="Ранок">🌅 Ранок</option>
@@ -83,7 +83,7 @@
 				id="stateLocationName"
 				type="text"
 				placeholder="Назва поточної локації"
-				value={game.locationName || game.location || ''}
+				value={game.locationName || game.location || ""}
 				onchange={handleLocationNameChange}
 			/>
 		</div>
@@ -93,7 +93,7 @@
 				id="stateLocationDescription"
 				rows="4"
 				placeholder="Детальний опис поточної локації"
-				value={game.locationDescription || ''}
+				value={game.locationDescription || ""}
 				onchange={handleLocationDescriptionChange}
 			></textarea>
 		</div>
@@ -103,7 +103,7 @@
 				id="stateSetting"
 				type="text"
 				placeholder="наприклад: середньовіччя, кіберпанк, космос"
-				value={game.setting || ''}
+				value={game.setting || ""}
 				onchange={handleSettingChange}
 			/>
 		</div>
@@ -117,7 +117,7 @@
 		<textarea
 			id="stateObjectives"
 			rows="4"
-			value={game.objectives || ''}
+			value={game.objectives || ""}
 			onchange={handleObjectivesChange}
 		></textarea>
 	</div>
@@ -129,9 +129,9 @@
 		</div>
 		<textarea
 			id="stateMemory"
-			rows="4"
+			rows="10"
 			placeholder="• День 1, Ранок, Запорошена таверна: Основні моменти..."
-			value={game.memory || ''}
+			value={game.memory || ""}
 			onchange={handleMemoryChange}
 		></textarea>
 	</div>
@@ -148,9 +148,10 @@
 			disabled={game.isStarted}
 		>
 			{#each game.characters as c (c.id)}
-				{@const raceStr = c.race ? `${c.race}, ` : ''}
+				{@const raceStr = c.race ? `${c.race}, ` : ""}
 				<option value={c.id}>
-					{c.name || ''} {c.surname || ''} ({raceStr}{c.gender || ''})
+					{c.name || ""}
+					{c.surname || ""} ({raceStr}{c.gender || ""})
 				</option>
 			{/each}
 		</select>
@@ -160,7 +161,11 @@
 	<div class="card">
 		<div class="card-header">
 			<span>👥 Персонажі</span>
-			<button class="btn-add" onclick={addNewCharacter} title="Додати персонажа">+</button>
+			<button
+				class="btn-add"
+				onclick={addNewCharacter}
+				title="Додати персонажа">+</button
+			>
 		</div>
 		<div class="list-container">
 			{#each game.characters as char (char.id)}
@@ -173,7 +178,11 @@
 	<div class="card">
 		<div class="card-header">
 			<span>📍 Локації</span>
-			<button class="btn-add" onclick={addNewLocation} title="Додати локацію">+</button>
+			<button
+				class="btn-add"
+				onclick={addNewLocation}
+				title="Додати локацію">+</button
+			>
 		</div>
 		<div class="list-container">
 			{#if (game.locations || []).length === 0}
