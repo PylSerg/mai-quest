@@ -1,6 +1,6 @@
 import type { Game } from '../types';
 
-const DB_NAME = 'GeminiQuestDB';
+const DB_NAME = 'MAIQuestDB';
 const DB_VERSION = 1;
 
 let db: IDBDatabase | null = null;

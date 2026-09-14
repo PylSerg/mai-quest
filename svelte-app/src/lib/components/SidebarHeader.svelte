@@ -6,21 +6,28 @@
 		deleteCurrentGame,
 		exportCurrentGame,
 		importGame,
-		SCENARIOS_PRESETS
-	} from '$lib/stores/game.svelte';
+		SCENARIOS_PRESETS,
+	} from "$lib/stores/game.svelte";
 	import {
 		uiState,
 		toggleTheme,
-		toggleSidebarHeader
-	} from '$lib/stores/ui.svelte';
+		toggleSidebarHeader,
+	} from "$lib/stores/ui.svelte";
 
 	let fileInputRef: HTMLInputElement | null = $state(null);
 
 	async function handleCreateNewGame() {
 		const defaultPreset = SCENARIOS_PRESETS[0];
-		const title = prompt('Введіть назву нової пригоди:', defaultPreset.title);
+		const title = prompt(
+			"Введіть назву нової пригоди:",
+			defaultPreset.title,
+		);
 		const effectiveTitle = title?.trim() || defaultPreset.title;
-		await createNewGame(effectiveTitle, uiState.apiKey, uiState.selectedModel);
+		await createNewGame(
+			effectiveTitle,
+			uiState.apiKey,
+			uiState.selectedModel,
+		);
 	}
 
 	async function handleDeleteCurrentGame() {
@@ -41,10 +48,10 @@
 				const content = ev.target?.result as string;
 				await importGame(content);
 			} catch (err) {
-				alert('Помилка читання JSON файлу');
+				alert("Помилка читання JSON файлу");
 				console.error(err);
 			}
-			target.value = '';
+			target.value = "";
 		};
 		reader.readAsText(file);
 	}
@@ -60,21 +67,21 @@
 
 <div class="sidebar-header">
 	<div class="row header-title-row">
-		<strong>sAI Quests</strong>
+		<strong>My AI Quest</strong>
 		<div class="row" style="gap: 6px;">
 			<button
 				class="btn-round"
 				onclick={toggleTheme}
 				title="Переключити тему"
 			>
-				{uiState.theme === 'light' ? '🌙' : '☀️'}
+				{uiState.theme === "light" ? "🌙" : "☀️"}
 			</button>
 			<button
 				class="btn-round"
 				onclick={toggleSidebarHeader}
 				title="Згорнути/розгорнути панель"
 			>
-				{uiState.sidebarHeaderCollapsed ? '▼' : '▲'}
+				{uiState.sidebarHeaderCollapsed ? "▼" : "▲"}
 			</button>
 		</div>
 	</div>
@@ -96,7 +103,9 @@
 		<div class="form-group">
 			<label for="modelSelect">Модель Gemini</label>
 			<select id="modelSelect" bind:value={uiState.selectedModel}>
-				<option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
+				<option value="gemini-3.5-flash-lite"
+					>Gemini 3.5 Flash-Lite</option
+				>
 				<option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
 				<option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
 				<option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
@@ -106,7 +115,7 @@
 
 		<div class="row">
 			<select
-				value={gameState.currentGame?.id ?? ''}
+				value={gameState.currentGame?.id ?? ""}
 				onchange={handleSelectGame}
 				style="flex: 1; min-width: 0;"
 			>
@@ -118,9 +127,14 @@
 					{/each}
 				{/if}
 			</select>
-			<button onclick={handleCreateNewGame} title="Створити гру">+</button>
-			<button onclick={exportCurrentGame} title="Експорт у JSON">💾</button>
-			<button onclick={() => fileInputRef?.click()} title="Імпорт з JSON">📥</button>
+			<button onclick={handleCreateNewGame} title="Створити гру">+</button
+			>
+			<button onclick={exportCurrentGame} title="Експорт у JSON"
+				>💾</button
+			>
+			<button onclick={() => fileInputRef?.click()} title="Імпорт з JSON"
+				>📥</button
+			>
 			<input
 				type="file"
 				bind:this={fileInputRef}
@@ -131,8 +145,8 @@
 			<button
 				class="danger"
 				onclick={handleDeleteCurrentGame}
-				title="Видалити гру"
-			>🗑</button>
+				title="Видалити гру">🗑</button
+			>
 		</div>
 	</div>
 </div>
@@ -156,7 +170,10 @@
 		overflow: hidden;
 		max-height: 500px;
 		opacity: 1;
-		transition: max-height 0.3s ease, opacity 0.25s ease, margin-top 0.3s ease;
+		transition:
+			max-height 0.3s ease,
+			opacity 0.25s ease,
+			margin-top 0.3s ease;
 	}
 	.sidebar-header-body.collapsed {
 		max-height: 0;

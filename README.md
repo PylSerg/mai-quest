@@ -1,1 +1,1 @@
-# mai-quest
+# My AI Quest

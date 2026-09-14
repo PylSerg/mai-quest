@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { onMount, tick } from "svelte";
 	import {
 		gameState,
 		refreshGameList,
@@ -9,18 +9,18 @@
 		handleStartGame,
 		editLastUserMessage,
 		createNewGame,
-		SCENARIOS_PRESETS
-	} from '$lib/stores/game.svelte';
+		SCENARIOS_PRESETS,
+	} from "$lib/stores/game.svelte";
 	import {
 		uiState,
 		initUI,
 		toggleSidebar,
-		closeMobileSidebar
-	} from '$lib/stores/ui.svelte';
-	import Sidebar from '$lib/components/Sidebar.svelte';
-	import ChatHeader from '$lib/components/ChatHeader.svelte';
-	import ChatMessages from '$lib/components/ChatMessages.svelte';
-	import InputArea from '$lib/components/InputArea.svelte';
+		closeMobileSidebar,
+	} from "$lib/stores/ui.svelte";
+	import Sidebar from "$lib/components/Sidebar.svelte";
+	import ChatHeader from "$lib/components/ChatHeader.svelte";
+	import ChatMessages from "$lib/components/ChatMessages.svelte";
+	import InputArea from "$lib/components/InputArea.svelte";
 
 	let inputAreaComponent: ReturnType<typeof InputArea> | null = $state(null);
 	let scrollRef: HTMLDivElement | null = $state(null);
@@ -60,9 +60,16 @@
 
 	async function handleQuickNewGame() {
 		const defaultPreset = SCENARIOS_PRESETS[0];
-		const title = prompt('Введіть назву нової пригоди:', defaultPreset.title);
+		const title = prompt(
+			"Введіть назву нової пригоди:",
+			defaultPreset.title,
+		);
 		const effectiveTitle = title?.trim() || defaultPreset.title;
-		await createNewGame(effectiveTitle, uiState.apiKey, uiState.selectedModel);
+		await createNewGame(
+			effectiveTitle,
+			uiState.apiKey,
+			uiState.selectedModel,
+		);
 	}
 
 	// Auto-scroll on new messages, options, or generating state
@@ -72,7 +79,10 @@
 		const optCount = gameState.currentOptions.length;
 		if (scrollRef && (msgCount > 0 || isGen || optCount > 0)) {
 			tick().then(() => {
-				scrollRef?.scrollTo({ top: scrollRef.scrollHeight, behavior: 'smooth' });
+				scrollRef?.scrollTo({
+					top: scrollRef.scrollHeight,
+					behavior: "smooth",
+				});
 			});
 		}
 	});
@@ -83,7 +93,7 @@
 	id="sidebar-overlay"
 	class:active={uiState.sidebarOpen}
 	onclick={closeMobileSidebar}
-	onkeydown={(e) => e.key === 'Escape' && closeMobileSidebar()}
+	onkeydown={(e) => e.key === "Escape" && closeMobileSidebar()}
 	role="button"
 	tabindex="0"
 	aria-label="Закрити меню"
@@ -93,9 +103,9 @@
 
 <main id="main-chat">
 	<ChatHeader
-		title={gameState.currentGame?.title || 'Оберіть або створіть гру'}
+		title={gameState.currentGame?.title || "Оберіть або створіть гру"}
 		day={gameState.currentGame?.day || 1}
-		timeOfDay={gameState.currentGame?.timeOfDay || 'День'}
+		timeOfDay={gameState.currentGame?.timeOfDay || "День"}
 		onToggleSidebar={toggleSidebar}
 	/>
 
@@ -122,9 +132,14 @@
 	{:else}
 		<div class="empty-state">
 			<div class="empty-card">
-				<h2>✨ sAI Quests</h2>
-				<p>Інтерактивна рольова гра на базі штучного інтелекту Gemini.</p>
-				<p>Створіть свій власний світ з унікальними персонажами, локаціями та нелінійним сюжетом.</p>
+				<h2>✨ My AI Quest</h2>
+				<p>
+					Інтерактивна рольова гра на базі штучного інтелекту Gemini.
+				</p>
+				<p>
+					Створіть свій власний світ з унікальними персонажами,
+					локаціями та нелінійним сюжетом.
+				</p>
 				<button class="btn-create-game" onclick={handleQuickNewGame}>
 					+ Створити нову гру
 				</button>
