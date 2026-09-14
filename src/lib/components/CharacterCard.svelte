@@ -1,17 +1,22 @@
 <script lang="ts">
-	import type { Game, Character } from '$lib/types';
-	import AvatarWrap from './AvatarWrap.svelte';
-	import RelBadge from './RelBadge.svelte';
-	import { FALLBACK_AVATAR, buildAvatarUrl } from '$lib/services/avatar';
-	import { getRelation, getRelClass, getRelIcon, getRelDescription } from '$lib/utils/relations';
+	import type { Game, Character } from "$lib/types";
+	import AvatarWrap from "./AvatarWrap.svelte";
+	import RelBadge from "./RelBadge.svelte";
+	import { FALLBACK_AVATAR, buildAvatarUrl } from "$lib/services/avatar";
+	import {
+		getRelation,
+		getRelClass,
+		getRelIcon,
+		getRelDescription,
+	} from "$lib/utils/relations";
 	import {
 		updateCharData,
 		updateCharRelation,
 		deleteCharacter,
 		generateAvatar,
 		uploadAvatarFile,
-		gameState
-	} from '$lib/stores/game.svelte';
+		gameState,
+	} from "$lib/stores/game.svelte";
 
 	interface Props {
 		char: Character;
@@ -21,18 +26,27 @@
 
 	const isPlayer = $derived(char.id === game.playerCharId);
 	const relVal = $derived(getRelation(char, game.playerCharId));
-	const isPendingNew = $derived(gameState.pendingNewCharIds.includes(char.id));
-	const canDelete = $derived(
-		!game.isStarted || gameState.pendingManualCharIds.includes(char.id) || !!char.pendingManualDeletion
+	const isPendingNew = $derived(
+		gameState.pendingNewCharIds.includes(char.id),
 	);
-	const allOtherChars = $derived(game.characters.filter((c) => c.id !== char.id));
+	const canDelete = $derived(
+		!game.isStarted ||
+			gameState.pendingManualCharIds.includes(char.id) ||
+			!!char.pendingManualDeletion,
+	);
+	const allOtherChars = $derived(
+		game.characters.filter((c) => c.id !== char.id),
+	);
 	const shouldShowRelations = $derived(!(isPlayer && game.isStarted));
 
 	function handleDelete(e: MouseEvent) {
 		e.stopPropagation();
 		e.preventDefault();
-		if (!canDelete) { alert('Після початку гри цього персонажа не можна видалити.'); return; }
-		const name = `${char.name || ''} ${char.surname || ''}`.trim();
+		if (!canDelete) {
+			alert("Після початку гри цього персонажа не можна видалити.");
+			return;
+		}
+		const name = `${char.name || ""} ${char.surname || ""}`.trim();
 		if (!confirm(`Видалити персонажа "${name}"?`)) return;
 		deleteCharacter(char.id);
 	}
@@ -41,14 +55,22 @@
 		const input = e.target as HTMLInputElement;
 		if (input.files?.[0]) {
 			const reader = new FileReader();
-			reader.onload = (ev) => uploadAvatarFile(char.id, ev.target!.result as string);
+			reader.onload = (ev) =>
+				uploadAvatarFile(char.id, ev.target!.result as string);
 			reader.readAsDataURL(input.files[0]);
 		}
 	}
 
 	function handleGenerateAvatar() {
-		const name = `${char.name || ''} ${char.surname || ''}`.trim() || 'цього персонажа';
-		if (!confirm(`Згенерувати новий аватар для "${name}"? Поточний аватар буде замінено.`)) return;
+		const name =
+			`${char.name || ""} ${char.surname || ""}`.trim() ||
+			"цього персонажа";
+		if (
+			!confirm(
+				`Згенерувати новий аватар для "${name}"? Поточний аватар буде замінено.`,
+			)
+		)
+			return;
 		generateAvatar(char.id);
 	}
 </script>
@@ -56,7 +78,9 @@
 <details class="char-details">
 	<summary>
 		<AvatarWrap src={char.avatar || FALLBACK_AVATAR} size="28px" />
-		<span class="char-summary-name">{char.name || ''} {char.surname || ''}</span>
+		<span class="char-summary-name"
+			>{char.name || ""} {char.surname || ""}</span
+		>
 		{#if !isPlayer}
 			<RelBadge rel={relVal} />
 		{:else}
@@ -65,38 +89,111 @@
 		{#if canDelete}
 			<button class="danger del-btn" onclick={handleDelete}>✕</button>
 		{:else}
-			<span class="locked-icon" title="Після початку гри персонаж заблокований">🔒</span>
+			<span
+				class="locked-icon"
+				title="Після початку гри персонаж заблокований">🔒</span
+			>
 		{/if}
 	</summary>
 
 	<div class="char-details-body">
 		<div class="form-group">
-			<label for="char_{char.id}_name">Ім'я</label>
-			<input id="char_{char.id}_name" type="text" value={char.name || ''} onchange={(e) => updateCharData(char.id, 'name', (e.target as HTMLInputElement).value)} />
+			<label for="char_{char.id}_name">Ім'я</label><br />
+			<input
+				id="char_{char.id}_name"
+				type="text"
+				value={char.name || ""}
+				onchange={(e) =>
+					updateCharData(
+						char.id,
+						"name",
+						(e.target as HTMLInputElement).value,
+					)}
+			/>
 		</div>
+
 		<div class="form-group">
-			<label for="char_{char.id}_surname">Прізвище</label>
-			<input id="char_{char.id}_surname" type="text" value={char.surname || ''} onchange={(e) => updateCharData(char.id, 'surname', (e.target as HTMLInputElement).value)} />
+			<label for="char_{char.id}_surname">Прізвище</label><br />
+			<input
+				id="char_{char.id}_surname"
+				type="text"
+				value={char.surname || ""}
+				onchange={(e) =>
+					updateCharData(
+						char.id,
+						"surname",
+						(e.target as HTMLInputElement).value,
+					)}
+			/>
 		</div>
+
 		<div class="form-group">
-			<label for="char_{char.id}_race">Раса</label>
-			<input id="char_{char.id}_race" type="text" value={char.race || 'Людина'} placeholder="Людина, Ельф, Дворф..." onchange={(e) => updateCharData(char.id, 'race', (e.target as HTMLInputElement).value)} />
+			<label for="char_{char.id}_race">Раса</label><br />
+			<input
+				id="char_{char.id}_race"
+				type="text"
+				value={char.race || "Людина"}
+				placeholder="Людина, Ельф, Дворф..."
+				onchange={(e) =>
+					updateCharData(
+						char.id,
+						"race",
+						(e.target as HTMLInputElement).value,
+					)}
+			/>
 		</div>
+
 		<div class="form-group">
-			<label for="char_{char.id}_gender">Стать</label>
-			<select id="char_{char.id}_gender" onchange={(e) => updateCharData(char.id, 'gender', (e.target as HTMLSelectElement).value)}>
-				<option value="Чоловіча" selected={char.gender === 'Чоловіча'}>Чоловіча</option>
-				<option value="Жіноча" selected={char.gender === 'Жіноча'}>Жіноча</option>
-				<option value="Інша" selected={char.gender === 'Інша'}>Інша</option>
+			<label for="char_{char.id}_gender">Стать</label><br />
+			<select
+				id="char_{char.id}_gender"
+				onchange={(e) =>
+					updateCharData(
+						char.id,
+						"gender",
+						(e.target as HTMLSelectElement).value,
+					)}
+			>
+				<option value="Чоловіча" selected={char.gender === "Чоловіча"}
+					>Чоловіча</option
+				>
+				<option value="Жіноча" selected={char.gender === "Жіноча"}
+					>Жіноча</option
+				>
+				<option value="Інша" selected={char.gender === "Інша"}
+					>Інша</option
+				>
 			</select>
 		</div>
+
 		<div class="form-group">
-			<label for="char_{char.id}_age">Вік</label>
-			<input id="char_{char.id}_age" type="number" value={char.age || ''} onchange={(e) => updateCharData(char.id, 'age', (e.target as HTMLInputElement).value)} />
+			<label for="char_{char.id}_age">Вік</label><br />
+			<input
+				id="char_{char.id}_age"
+				type="number"
+				value={char.age || ""}
+				onchange={(e) =>
+					updateCharData(
+						char.id,
+						"age",
+						(e.target as HTMLInputElement).value,
+					)}
+			/>
 		</div>
+
 		<div class="form-group">
-			<label for="char_{char.id}_role">Роль / Фах</label>
-			<input id="char_{char.id}_role" type="text" value={char.role || ''} onchange={(e) => updateCharData(char.id, 'role', (e.target as HTMLInputElement).value)} />
+			<label for="char_{char.id}_role">Роль / Фах</label><br />
+			<input
+				id="char_{char.id}_role"
+				type="text"
+				value={char.role || ""}
+				onchange={(e) =>
+					updateCharData(
+						char.id,
+						"role",
+						(e.target as HTMLInputElement).value,
+					)}
+			/>
 		</div>
 
 		{#if shouldShowRelations && allOtherChars.length > 0}
@@ -105,8 +202,13 @@
 				{#each allOtherChars as target}
 					{@const targetRel = getRelation(char, target.id)}
 					{@const isTargetPlayer = target.id === game.playerCharId}
-					{@const targetLabel = `${target.name || ''} ${target.surname || ''} ${isTargetPlayer ? '(Гравець)' : ''}`.trim()}
-					{@const showSlider = !game.isStarted || (isPendingNew && !isPlayer) || (!isPlayer && gameState.pendingNewCharIds.includes(target.id))}
+					{@const targetLabel =
+						`${target.name || ""} ${target.surname || ""} ${isTargetPlayer ? "(Гравець)" : ""}`.trim()}
+					{@const showSlider =
+						!game.isStarted ||
+						(isPendingNew && !isPlayer) ||
+						(!isPlayer &&
+							gameState.pendingNewCharIds.includes(target.id))}
 					<div class="rel-row">
 						<div class="rel-row-label">
 							<span>До <strong>{targetLabel}</strong>:</span>
@@ -119,7 +221,15 @@
 								max="100"
 								value={targetRel}
 								style="margin-top:2px; cursor:pointer;"
-								oninput={(e) => updateCharRelation(char.id, target.id, parseInt((e.target as HTMLInputElement).value))}
+								oninput={(e) =>
+									updateCharRelation(
+										char.id,
+										target.id,
+										parseInt(
+											(e.target as HTMLInputElement)
+												.value,
+										),
+									)}
 							/>
 						{/if}
 					</div>
@@ -128,26 +238,78 @@
 		{/if}
 
 		<div class="form-group">
-			<label for="char_{char.id}_personality">Характер (Ключовий для ШІ)</label>
-			<textarea id="char_{char.id}_personality" rows="3" placeholder="Опишіть манеру, темперамент, звички, недоліки..." onchange={(e) => updateCharData(char.id, 'personality', (e.target as HTMLTextAreaElement).value)}>{char.personality || ''}</textarea>
+			<label for="char_{char.id}_personality"
+				>Характер (Ключовий для ШІ)</label
+			><br />
+			<textarea
+				id="char_{char.id}_personality"
+				rows="5"
+				placeholder="Опишіть манеру, темперамент, звички, недоліки..."
+				onchange={(e) =>
+					updateCharData(
+						char.id,
+						"personality",
+						(e.target as HTMLTextAreaElement).value,
+					)}>{char.personality || ""}</textarea
+			>
 		</div>
+
 		<div class="form-group">
-			<label for="char_{char.id}_appearance">Зовнішність</label>
-			<textarea id="char_{char.id}_appearance" rows="3" placeholder="Зріст, одяг, зброя, особливі прикмети..." onchange={(e) => updateCharData(char.id, 'appearance', (e.target as HTMLTextAreaElement).value)}>{char.appearance || ''}</textarea>
+			<label for="char_{char.id}_appearance">Зовнішність</label><br />
+			<textarea
+				id="char_{char.id}_appearance"
+				rows="5"
+				placeholder="Зріст, одяг, зброя, особливі прикмети..."
+				onchange={(e) =>
+					updateCharData(
+						char.id,
+						"appearance",
+						(e.target as HTMLTextAreaElement).value,
+					)}>{char.appearance || ""}</textarea
+			>
 		</div>
+
 		<div class="form-group">
-			<label for="char_{char.id}_avatar">Аватар</label>
+			<label for="char_{char.id}_avatar">Аватар</label><br />
 			<div class="row">
 				<input
 					id="char_{char.id}_avatar"
 					style="width:100%"
 					type="text"
-					value={char.avatar && !char.avatar.startsWith('data:') ? char.avatar : ''}
-					onchange={(e) => updateCharData(char.id, 'avatar', (e.target as HTMLInputElement).value)}
+					value={char.avatar && !char.avatar.startsWith("data:")
+						? char.avatar
+						: ""}
+					onchange={(e) =>
+						updateCharData(
+							char.id,
+							"avatar",
+							(e.target as HTMLInputElement).value,
+						)}
 				/>
-				<input type="file" accept="image/*" style="display:none" id="file_{char.id}" onchange={handleAvatarFile} />
-				<button type="button" style="padding:4px 8px;font-size:12px;" onclick={() => (document.getElementById(`file_${char.id}`) as HTMLInputElement)?.click()} title="Завантажити файл">📁</button>
-				<button type="button" style="padding:4px 8px;font-size:12px;" onclick={handleGenerateAvatar} title="Згенерувати аватар">🎨</button>
+				<input
+					type="file"
+					accept="image/*"
+					style="display:none"
+					id="file_{char.id}"
+					onchange={handleAvatarFile}
+				/>
+				<button
+					type="button"
+					style="padding:4px 8px;font-size:12px;"
+					onclick={() =>
+						(
+							document.getElementById(
+								`file_${char.id}`,
+							) as HTMLInputElement
+						)?.click()}
+					title="Завантажити файл">📁</button
+				>
+				<button
+					type="button"
+					style="padding:4px 8px;font-size:12px;"
+					onclick={handleGenerateAvatar}
+					title="Згенерувати аватар">🎨</button
+				>
 			</div>
 		</div>
 	</div>
@@ -168,7 +330,9 @@
 		gap: 10px;
 		list-style: none;
 	}
-	.char-details summary::-webkit-details-marker { display: none; }
+	.char-details summary::-webkit-details-marker {
+		display: none;
+	}
 	.char-summary-name {
 		flex: 1;
 		overflow: hidden;
@@ -216,7 +380,7 @@
 		flex-direction: column;
 		gap: 4px;
 		padding-bottom: 6px;
-		border-bottom: 1px solid rgba(255,255,255,0.05);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 	}
 	.rel-row-label {
 		display: flex;
@@ -228,5 +392,16 @@
 		display: flex;
 		gap: 8px;
 		align-items: center;
+	}
+
+	.form-group input,
+	.form-group textarea,
+	.form-group select {
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.form-group textarea {
+		min-width: 100%;
 	}
 </style>
