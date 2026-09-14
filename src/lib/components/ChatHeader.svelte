@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { TIME_ICONS } from '$lib/stores/game.svelte';
+	import { TIME_ICONS } from "$lib/stores/game.svelte";
 
 	interface Props {
 		title: string;
@@ -12,16 +12,21 @@
 
 <div class="chat-header">
 	<div class="chat-header-title">
-		<button class="btn-toggle-sidebar" onclick={onToggleSidebar} title="Меню">☰</button>
-		<h2>{title}</h2>
+		<button
+			class="btn-toggle-sidebar"
+			onclick={onToggleSidebar}
+			title="Меню">☰</button
+		>
 	</div>
 	<div class="header-actions">
 		<span class="header-badge" title="Поточний день">День {day}</span>
 		<span class="header-badge" title="Поточний час доби"
-			>{TIME_ICONS[timeOfDay] || '☀️'} {timeOfDay}</span
+			>{TIME_ICONS[timeOfDay] || "☀️"} {timeOfDay}</span
 		>
-		<button class="btn-round" onclick={() => location.reload()} title="Перезавантажити сторінку"
-			>🔄</button
+		<button
+			class="btn-round"
+			onclick={() => location.reload()}
+			title="Перезавантажити сторінку">⭮</button
 		>
 	</div>
 </div>
@@ -90,5 +95,8 @@
 		color: var(--text-color);
 		font-weight: normal;
 	}
-	.btn-round:hover { border-color: var(--accent-color); background: var(--input-bg); }
+	.btn-round:hover {
+		border-color: var(--accent-color);
+		background: var(--input-bg);
+	}
 </style>
