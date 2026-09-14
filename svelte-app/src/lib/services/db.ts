@@ -52,11 +52,12 @@ export async function dbGetAllGames(): Promise<Game[]> {
 
 export async function dbSaveGame(game: Game): Promise<number> {
 	const database = await ensureDB();
+	const cleanGame = JSON.parse(JSON.stringify(game));
 	return new Promise((resolve, reject) => {
 		if (!database) return resolve(0);
 		const tx = database.transaction('games', 'readwrite');
 		const store = tx.objectStore('games');
-		const req = store.put(game);
+		const req = store.put(cleanGame);
 		req.onsuccess = () => resolve(req.result as number);
 		req.onerror = () => reject(req.error);
 	});
