@@ -113,11 +113,13 @@
 			</select>
 		</div>
 
-		<div class="row">
+		<div class="row game-control">
+			<label for="gameSelect">Поточна гра</label>
 			<select
+				id="gameSelect"
 				value={gameState.currentGame?.id ?? ""}
 				onchange={handleSelectGame}
-				style="flex: 1; min-width: 0;"
+				style="flex: 1; min-width: 0; max-width: 100%; width: 100%;"
 			>
 				{#if gameState.games.length === 0}
 					<option value="">Немає збережених ігор</option>
@@ -127,26 +129,31 @@
 					{/each}
 				{/if}
 			</select>
-			<button onclick={handleCreateNewGame} title="Створити гру">+</button
-			>
-			<button onclick={exportCurrentGame} title="Експорт у JSON"
-				>💾</button
-			>
-			<button onclick={() => fileInputRef?.click()} title="Імпорт з JSON"
-				>📥</button
-			>
-			<input
-				type="file"
-				bind:this={fileInputRef}
-				accept=".json"
-				style="display:none"
-				onchange={handleImportFile}
-			/>
-			<button
-				class="danger"
-				onclick={handleDeleteCurrentGame}
-				title="Видалити гру">🗑</button
-			>
+
+			<div class="game-buttons">
+				<button onclick={handleCreateNewGame} title="Створити гру"
+					>+</button
+				>
+				<button onclick={exportCurrentGame} title="Експорт у JSON"
+					>💾</button
+				>
+				<button
+					onclick={() => fileInputRef?.click()}
+					title="Імпорт з JSON">📥</button
+				>
+				<input
+					type="file"
+					bind:this={fileInputRef}
+					accept=".json"
+					style="display:none"
+					onchange={handleImportFile}
+				/>
+				<button
+					class="danger"
+					onclick={handleDeleteCurrentGame}
+					title="Видалити гру">🗑</button
+				>
+			</div>
 		</div>
 	</div>
 </div>
@@ -186,16 +193,39 @@
 		gap: 8px;
 		align-items: center;
 	}
+
+	.game-control {
+		display: flex;
+		flex-direction: column;
+		margin-top: 20px;
+	}
+
+	.game-control label {
+		width: 100%;
+	}
+	.game-buttons {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		gap: 20px;
+		width: 100%;
+		margin-top: 10px;
+	}
+	.game-buttons button {
+		width: 100%;
+	}
 	.form-group {
 		display: flex;
 		flex-direction: column;
 		gap: 5px;
 	}
-	.form-group label {
+	.form-group label,
+	.game-control label {
 		font-size: 11px;
 		color: var(--text-dim);
 		text-transform: uppercase;
 		font-weight: bold;
+		text-align: left;
 	}
 	.btn-round {
 		width: 38px;
