@@ -7,6 +7,18 @@ let _sidebarHeaderCollapsed = $state(false);
 let _apiKey = $state('');
 let _selectedModel = $state('gemini-3.5-flash-lite');
 
+function updateThemeColor(theme: 'dark' | 'light') {
+	if (typeof document === 'undefined') return;
+	const color = theme === 'light' ? '#ffffff' : '#1e1e24';
+	let meta = document.querySelector('meta[name="theme-color"]');
+	if (!meta) {
+		meta = document.createElement('meta');
+		meta.setAttribute('name', 'theme-color');
+		document.head.appendChild(meta);
+	}
+	meta.setAttribute('content', color);
+}
+
 export const uiState = {
 	get theme() {
 		return _theme;
@@ -16,6 +28,7 @@ export const uiState = {
 		if (typeof document !== 'undefined') {
 			document.documentElement.setAttribute('data-theme', v);
 			localStorage.setItem('app_theme', v);
+			updateThemeColor(v);
 		}
 	},
 
@@ -76,6 +89,7 @@ export function initUI(): void {
 		_theme = prefersDark ? 'dark' : 'light';
 	}
 	document.documentElement.setAttribute('data-theme', _theme);
+	updateThemeColor(_theme);
 
 	// Init sidebar header
 	const savedHeader = localStorage.getItem('sidebar_header_collapsed');
