@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { gameState } from '$lib/stores/game.svelte';
-	import { uiState } from '$lib/stores/ui.svelte';
-	import SidebarHeader from './SidebarHeader.svelte';
-	import GameStatePanel from './GameStatePanel.svelte';
+	import { gameState } from "$lib/stores/game.svelte";
+	import { uiState } from "$lib/stores/ui.svelte";
+	import SidebarHeader from "./SidebarHeader.svelte";
+	import GameStatePanel from "./GameStatePanel.svelte";
 </script>
 
 <div
@@ -47,7 +47,6 @@
 			max-width: 340px;
 			transform: translateX(-100%);
 			margin-left: 0 !important;
-			box-shadow: 4px 0 15px rgba(0, 0, 0, 0.5);
 		}
 
 		#sidebar.open {
