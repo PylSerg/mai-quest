@@ -19,6 +19,16 @@
 				},
 			});
 		}
+
+		// Smoothly fade out the splash screen once app mounts
+		const splash = document.getElementById("app-splash");
+		if (splash) {
+			setTimeout(() => {
+				splash.style.opacity = "0";
+				splash.style.pointerEvents = "none";
+				setTimeout(() => splash.remove(), 400);
+			}, 300);
+		}
 	});
 
 	let webManifestLink = pwaInfo ? pwaInfo.webManifest : "";
