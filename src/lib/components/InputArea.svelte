@@ -65,7 +65,7 @@
 			rows="1"
 			style="flex:1; resize:none; overflow-y:auto; font-size:18px;"
 			placeholder="Що ти робиш або кажеш?..."
-			{disabled}
+			disabled={disabled || isGenerating}
 			oninput={autoResize}
 			onkeydown={handleKeydown}
 		></textarea>
@@ -138,4 +138,5 @@
 	}
 	.btn-send svg { margin-left: 3px; }
 	.btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+	textarea:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>
