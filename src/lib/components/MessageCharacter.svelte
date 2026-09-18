@@ -8,8 +8,9 @@
 	interface Props {
 		message: Message;
 		game: Game;
+		msgIdx?: number;
 	}
-	let { message, game }: Props = $props();
+	let { message, game, msgIdx }: Props = $props();
 
 	const char = $derived(
 		game.characters.find((c) => c.id === message.charId) || {
@@ -28,7 +29,7 @@
 	});
 </script>
 
-<div class="message character">
+<div class="message character" data-msg-idx={msgIdx}>
 	<div class="char-header">
 		<AvatarWrap src={(char as { avatar?: string }).avatar || FALLBACK_AVATAR} />
 		<span class="char-name">{char.name || ''} {char.surname || ''}</span>

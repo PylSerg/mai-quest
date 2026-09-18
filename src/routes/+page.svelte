@@ -71,21 +71,6 @@
 			uiState.selectedModel,
 		);
 	}
-
-	// Auto-scroll on new messages, options, or generating state
-	$effect(() => {
-		const msgCount = gameState.currentGame?.messages.length ?? 0;
-		const isGen = gameState.isGenerating;
-		const optCount = gameState.currentOptions.length;
-		if (scrollRef && (msgCount > 0 || isGen || optCount > 0)) {
-			tick().then(() => {
-				scrollRef?.scrollTo({
-					top: scrollRef.scrollHeight,
-					behavior: "smooth",
-				});
-			});
-		}
-	});
 </script>
 
 <!-- Mobile sidebar overlay -->

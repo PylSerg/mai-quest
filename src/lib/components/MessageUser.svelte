@@ -8,15 +8,16 @@
 		game: Game;
 		isLast: boolean;
 		onEdit: () => void;
+		msgIdx?: number;
 	}
-	let { message, game, isLast, onEdit }: Props = $props();
+	let { message, game, isLast, onEdit, msgIdx }: Props = $props();
 
 	const playerChar = $derived(
 		game.characters.find((c) => c.id === game.playerCharId) || { name: 'Ти', surname: '', avatar: '' }
 	);
 </script>
 
-<div class="message user">
+<div class="message user" data-msg-idx={msgIdx}>
 	<div class="char-header user-header">
 		{#if isLast}
 			<button class="btn-edit-msg" onclick={onEdit} title="Редагувати в полі вводу">✏️</button>

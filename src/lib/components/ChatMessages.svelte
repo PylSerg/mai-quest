@@ -37,6 +37,8 @@
 	let currentGameId = $state<number | undefined>(undefined);
 	let isLoadingMore = $state(false);
 	let isReady = $state(false);
+	let prevMessagesLength = $state(-1);
+	let prevOptionsCount = $state(0);
 
 	const effectiveStartIndex = $derived(
 		startIndex < 0 ? Math.max(0, game.messages.length - PAGE_SIZE) : startIndex
@@ -59,7 +61,33 @@
 		return last.type === 'narration' || last.type === 'character';
 	});
 
+	function scrollToElementTop(targetEl: HTMLElement) {
+		if (!scrollRef) return;
+		const containerRect = scrollRef.getBoundingClientRect();
+		const targetRect = targetEl.getBoundingClientRect();
+		const targetScrollTop = scrollRef.scrollTop + (targetRect.top - containerRect.top) - 10;
+		scrollRef.scrollTo({
+			top: Math.max(0, targetScrollTop),
+			behavior: 'smooth'
+		});
+	}
+
+	function handleActionBarToggleOptions() {
+		onToggleOptions();
+		// If options were closed, we are opening them: smoothly scroll action bar to top
+		if (currentOptions.length === 0) {
+			tick().then(() => {
+				const actionBar = scrollRef?.querySelector('.action-bar-wrap') as HTMLElement | null;
+				if (actionBar) {
+					scrollToElementTop(actionBar);
+				}
+			});
+		}
+	}
+
 	onMount(() => {
+		prevMessagesLength = game.messages.length;
+		prevOptionsCount = currentOptions.length;
 		if (startIndex < 0) {
 			startIndex = Math.max(0, game.messages.length - PAGE_SIZE);
 		}
@@ -81,6 +109,8 @@
 			currentGameId = game.id;
 			isReady = false;
 			startIndex = Math.max(0, game.messages.length - PAGE_SIZE);
+			prevMessagesLength = game.messages.length;
+			prevOptionsCount = currentOptions.length;
 			tick().then(() => {
 				if (scrollRef) {
 					scrollRef.scrollTop = scrollRef.scrollHeight;
@@ -95,6 +125,70 @@
 	$effect(() => {
 		if (startIndex > game.messages.length) {
 			startIndex = Math.max(0, game.messages.length - PAGE_SIZE);
+		}
+	});
+
+	// Auto-scroll on new messages: user messages scroll to bottom; AI messages align at top
+	$effect(() => {
+		const currentLength = game.messages.length;
+		const prevLen = prevMessagesLength;
+
+		if (!isReady || game.id !== currentGameId) {
+			prevMessagesLength = currentLength;
+			return;
+		}
+
+		if (currentLength > prevLen) {
+			const firstNewIdx = prevLen;
+			const firstNewMessage = game.messages[firstNewIdx];
+			prevMessagesLength = currentLength;
+
+			if (firstNewMessage) {
+				if (firstNewMessage.type === 'user') {
+					tick().then(() => {
+						if (scrollRef) {
+							scrollRef.scrollTo({
+								top: scrollRef.scrollHeight,
+								behavior: 'smooth'
+							});
+						}
+					});
+				} else {
+					// AI message arrived (from prompt, continue, start game, or option) -> show at the TOP of the screen
+					tick().then(() => {
+						requestAnimationFrame(() => {
+							const targetEl = scrollRef?.querySelector(
+								`[data-msg-idx="${firstNewIdx}"]`
+							) as HTMLElement | null;
+							if (targetEl) {
+								scrollToElementTop(targetEl);
+							}
+						});
+					});
+				}
+			}
+		} else {
+			prevMessagesLength = currentLength;
+		}
+	});
+
+	// Auto-scroll on new options: align action bar / options at the top
+	$effect(() => {
+		const optCount = currentOptions.length;
+		const prevOpt = prevOptionsCount;
+		prevOptionsCount = optCount;
+
+		if (!isReady || game.id !== currentGameId) return;
+
+		if (optCount > 0 && prevOpt === 0) {
+			tick().then(() => {
+				requestAnimationFrame(() => {
+					const actionBar = scrollRef?.querySelector('.action-bar-wrap') as HTMLElement | null;
+					if (actionBar) {
+						scrollToElementTop(actionBar);
+					}
+				});
+			});
 		}
 	});
 
@@ -172,21 +266,24 @@
 					{game}
 					isLast={actualIdx === lastUserIdx}
 					onEdit={() => onEditMessage(actualIdx)}
+					msgIdx={actualIdx}
 				/>
 			{:else if message.type === 'narration'}
-				<MessageNarration {message} />
+				<MessageNarration {message} msgIdx={actualIdx} />
 			{:else if message.type === 'character'}
-				<MessageCharacter {message} {game} />
+				<MessageCharacter {message} {game} msgIdx={actualIdx} />
 			{/if}
 		{/each}
 
 		{#if showActionBar}
-			<ActionBar
-				options={currentOptions}
-				{onContinue}
-				{onToggleOptions}
-				{onSelectOption}
-			/>
+			<div class="action-bar-wrap">
+				<ActionBar
+					options={currentOptions}
+					{onContinue}
+					onToggleOptions={handleActionBarToggleOptions}
+					{onSelectOption}
+				/>
+			</div>
 		{/if}
 
 		{#if !game.isStarted}
@@ -219,13 +316,18 @@
 	}
 	.chat-messages {
 		flex: 1;
-		padding: 20px;
+		padding: 20px 20px min(50vh, 320px) 20px;
 		overflow-y: auto;
 		overflow-anchor: none;
 		display: flex;
 		flex-direction: column;
 		gap: 15px;
 		min-height: 0;
+	}
+	.action-bar-wrap {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
 	}
 	.load-more-wrap {
 		display: flex;

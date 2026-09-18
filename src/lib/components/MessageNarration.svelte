@@ -3,11 +3,12 @@
 
 	interface Props {
 		message: Message;
+		msgIdx?: number;
 	}
-	let { message }: Props = $props();
+	let { message, msgIdx }: Props = $props();
 </script>
 
-<div class="message narration">
+<div class="message narration" data-msg-idx={msgIdx}>
 	<div>{message.text}</div>
 </div>
 
