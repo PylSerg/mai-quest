@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { onMount, tick } from 'svelte';
 	import type { Game } from '$lib/types';
 	import MessageUser from './MessageUser.svelte';
 	import MessageNarration from './MessageNarration.svelte';
 	import MessageCharacter from './MessageCharacter.svelte';
 	import ActionBar from './ActionBar.svelte';
+
+	const PAGE_SIZE = 50;
 
 	interface Props {
 		game: Game;
@@ -30,6 +33,18 @@
 	}: Props = $props();
 
 	let scrollVisible = $state(false);
+	let startIndex = $state(-1);
+	let currentGameId = $state<number | undefined>(undefined);
+	let isLoadingMore = $state(false);
+	let isReady = $state(false);
+
+	const effectiveStartIndex = $derived(
+		startIndex < 0 ? Math.max(0, game.messages.length - PAGE_SIZE) : startIndex
+	);
+
+	const visibleMessages = $derived.by(() => {
+		return game.messages.slice(effectiveStartIndex);
+	});
 
 	const lastUserIdx = $derived.by(() => {
 		for (let i = game.messages.length - 1; i >= 0; i--) {
@@ -44,10 +59,74 @@
 		return last.type === 'narration' || last.type === 'character';
 	});
 
+	onMount(() => {
+		if (startIndex < 0) {
+			startIndex = Math.max(0, game.messages.length - PAGE_SIZE);
+		}
+		if (scrollRef) {
+			scrollRef.scrollTop = scrollRef.scrollHeight;
+		}
+		requestAnimationFrame(() => {
+			if (scrollRef) {
+				scrollRef.scrollTop = scrollRef.scrollHeight;
+			}
+			setTimeout(() => {
+				isReady = true;
+			}, 100);
+		});
+	});
+
+	$effect(() => {
+		if (game.id !== currentGameId) {
+			currentGameId = game.id;
+			isReady = false;
+			startIndex = Math.max(0, game.messages.length - PAGE_SIZE);
+			tick().then(() => {
+				if (scrollRef) {
+					scrollRef.scrollTop = scrollRef.scrollHeight;
+				}
+				setTimeout(() => {
+					isReady = true;
+				}, 100);
+			});
+		}
+	});
+
+	$effect(() => {
+		if (startIndex > game.messages.length) {
+			startIndex = Math.max(0, game.messages.length - PAGE_SIZE);
+		}
+	});
+
+	async function loadMoreMessages() {
+		if (effectiveStartIndex <= 0 || isLoadingMore || !scrollRef) return;
+		isLoadingMore = true;
+
+		const prevScrollHeight = scrollRef.scrollHeight;
+		const prevScrollTop = scrollRef.scrollTop;
+
+		startIndex = Math.max(0, effectiveStartIndex - PAGE_SIZE);
+
+		await tick();
+
+		if (scrollRef) {
+			const heightDiff = scrollRef.scrollHeight - prevScrollHeight;
+			scrollRef.scrollTop = prevScrollTop + heightDiff;
+		}
+
+		setTimeout(() => {
+			isLoadingMore = false;
+		}, 150);
+	}
+
 	function onScroll(e: Event) {
 		const el = e.target as HTMLDivElement;
 		const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
 		scrollVisible = dist > 80;
+
+		if (isReady && el.scrollTop <= 80 && effectiveStartIndex > 0 && !isLoadingMore) {
+			loadMoreMessages();
+		}
 	}
 
 	function scrollToBottom() {
@@ -64,13 +143,35 @@
 
 <div class="chat-messages-wrapper">
 	<div class="chat-messages" bind:this={scrollRef} onscroll={onScroll}>
-		{#each game.messages as message, idx (idx)}
+		{#if effectiveStartIndex > 0}
+			<div class="load-more-wrap">
+				<button
+					class="btn-load-more"
+					onclick={loadMoreMessages}
+					disabled={isLoadingMore}
+					aria-label="Завантажити попередні повідомлення"
+				>
+					{#if isLoadingMore}
+						<span class="spinner-inline"></span>
+						<span>Завантаження...</span>
+					{:else}
+						<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+							<path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z" />
+						</svg>
+						<span>Показати попередні повідомлення ({Math.min(effectiveStartIndex, PAGE_SIZE)})</span>
+					{/if}
+				</button>
+			</div>
+		{/if}
+
+		{#each visibleMessages as message, i (effectiveStartIndex + i)}
+			{@const actualIdx = effectiveStartIndex + i}
 			{#if message.type === 'user'}
 				<MessageUser
 					{message}
 					{game}
-					isLast={idx === lastUserIdx}
-					onEdit={() => onEditMessage(idx)}
+					isLast={actualIdx === lastUserIdx}
+					onEdit={() => onEditMessage(actualIdx)}
 				/>
 			{:else if message.type === 'narration'}
 				<MessageNarration {message} />
@@ -120,10 +221,52 @@
 		flex: 1;
 		padding: 20px;
 		overflow-y: auto;
+		overflow-anchor: none;
 		display: flex;
 		flex-direction: column;
 		gap: 15px;
 		min-height: 0;
+	}
+	.load-more-wrap {
+		display: flex;
+		justify-content: center;
+		padding: 4px 0 10px 0;
+	}
+	.btn-load-more {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		background: var(--card-bg);
+		border: 1px solid var(--border-color);
+		color: var(--text-dim);
+		font-size: 13px;
+		font-weight: 500;
+		padding: 6px 16px;
+		border-radius: 20px;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+	.btn-load-more:hover:not(:disabled) {
+		background: var(--panel-bg);
+		color: var(--text-color);
+		border-color: var(--accent-color);
+	}
+	.btn-load-more:disabled {
+		opacity: 0.7;
+		cursor: default;
+	}
+	.spinner-inline {
+		width: 14px;
+		height: 14px;
+		border: 2px solid var(--border-color);
+		border-top-color: var(--accent-color);
+		border-radius: 50%;
+		animation: spin 0.7s linear infinite;
+	}
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 	:global(.chat-messages .message) {
 		padding: 12px 16px;
