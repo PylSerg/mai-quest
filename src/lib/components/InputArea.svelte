@@ -12,19 +12,20 @@
 	let text = $state('');
 	let textareaEl: HTMLTextAreaElement | null = $state(null);
 
-	export function setValue(val: string) {
-		text = val;
-		if (textareaEl) {
-			textareaEl.style.height = 'auto';
-			textareaEl.style.height = Math.min(textareaEl.scrollHeight, 200) + 'px';
-			textareaEl.focus();
-		}
-	}
-
 	function autoResize() {
 		if (!textareaEl) return;
 		textareaEl.style.height = 'auto';
-		textareaEl.style.height = Math.min(textareaEl.scrollHeight, 200) + 'px';
+		const maxHeight = (typeof window !== 'undefined' ? window.innerHeight : 600) * 0.5;
+		textareaEl.style.height = Math.min(textareaEl.scrollHeight, maxHeight) + 'px';
+	}
+
+	export function setValue(val: string) {
+		text = val;
+		if (textareaEl) {
+			textareaEl.value = val;
+			autoResize();
+			textareaEl.focus();
+		}
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -47,6 +48,8 @@
 		}
 	}
 </script>
+
+<svelte:window onresize={autoResize} />
 
 {#if isGenerating}
 	<div class="status-container">
@@ -138,5 +141,9 @@
 	}
 	.btn-send svg { margin-left: 3px; }
 	.btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+	.input-controls textarea {
+		max-height: 50vh;
+		max-height: 50dvh;
+	}
 	textarea:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>
