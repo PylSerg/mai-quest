@@ -197,6 +197,11 @@
 </div>
 
 <style>
+	textarea {
+		min-width: 100%;
+		max-width: 100%;
+	}
+
 	.sidebar-content {
 		padding: 15px;
 		display: flex;
