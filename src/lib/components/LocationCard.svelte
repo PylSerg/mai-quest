@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { Game, Location } from '$lib/types';
+	import type { Game, Location } from "$lib/types";
 	import {
 		updateLocationName,
 		updateLocationDescription,
 		deleteLocation,
-		gameState
-	} from '$lib/stores/game.svelte';
+		gameState,
+	} from "$lib/stores/game.svelte";
 
 	interface Props {
 		loc: Location;
@@ -14,29 +14,33 @@
 	let { loc, game }: Props = $props();
 
 	const currentLocationName = $derived(
-		(game.locationName || game.location || '').trim().toLowerCase()
+		(game.locationName || game.location || "").trim().toLowerCase(),
 	);
 	const isCurrent = $derived(
-		!!currentLocationName && !!loc.name && loc.name.trim().toLowerCase() === currentLocationName
+		!!currentLocationName &&
+			!!loc.name &&
+			loc.name.trim().toLowerCase() === currentLocationName,
 	);
 	const canDelete = $derived(
 		!game.isStarted ||
 			gameState.pendingManualLocationIds.includes(loc.id) ||
-			!!loc.pendingManualDeletion
+			!!loc.pendingManualDeletion,
 	);
 	const titleText = $derived(
 		loc.name ||
-			(loc.description ? loc.description.trim().split('\n')[0].slice(0, 30) : 'Нова локація')
+			(loc.description
+				? loc.description.trim().split("\n")[0].slice(0, 30)
+				: "Нова локація"),
 	);
 
 	function handleDelete(e: MouseEvent) {
 		e.stopPropagation();
 		e.preventDefault();
 		if (!canDelete) {
-			alert('Після початку гри цю локацію не можна видалити.');
+			alert("Після початку гри цю локацію не можна видалити.");
 			return;
 		}
-		const locName = loc.name || 'цю локацію';
+		const locName = loc.name || "цю локацію";
 		if (!confirm(`Видалити локацію "${locName}"?`)) return;
 		deleteLocation(loc.id);
 	}
@@ -50,9 +54,16 @@
 			<span class="current-badge">Поточна</span>
 		{/if}
 		{#if canDelete}
-			<button class="danger del-btn" onclick={handleDelete} title="Видалити локацію">✕</button>
+			<button
+				class="danger del-btn"
+				onclick={handleDelete}
+				title="Видалити локацію">✕</button
+			>
 		{:else}
-			<span class="locked-icon" title="Після початку гри локація заблокована">🔒</span>
+			<span
+				class="locked-icon"
+				title="Після початку гри локація заблокована">🔒</span
+			>
 		{/if}
 	</summary>
 	<div class="char-details-body">
@@ -61,9 +72,13 @@
 			<input
 				id="loc_{loc.id}_name"
 				type="text"
-				value={loc.name || ''}
+				value={loc.name || ""}
 				placeholder="Назва локації..."
-				onchange={(e) => updateLocationName(loc.id, (e.target as HTMLInputElement).value)}
+				onchange={(e) =>
+					updateLocationName(
+						loc.id,
+						(e.target as HTMLInputElement).value,
+					)}
 			/>
 		</div>
 		<div class="form-group">
@@ -73,12 +88,21 @@
 				rows="5"
 				placeholder="Опис локації..."
 				onchange={(e) =>
-					updateLocationDescription(loc.id, (e.target as HTMLTextAreaElement).value)}>{loc.description || ''}</textarea>
+					updateLocationDescription(
+						loc.id,
+						(e.target as HTMLTextAreaElement).value,
+					)}>{loc.description || ""}</textarea
+			>
 		</div>
 	</div>
 </details>
 
 <style>
+	textarea {
+		min-width: 100%;
+		max-width: 100%;
+	}
+
 	.char-details {
 		border: 1px solid var(--border-color);
 		border-radius: 6px;
