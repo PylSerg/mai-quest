@@ -51,6 +51,7 @@ function addNewCharactersFromResult(
 			role: nc.role || 'Незнайомець',
 			personality: nc.personality || 'Звичайний',
 			appearance: nc.appearance || 'Звичайна',
+			backstory: nc.backstory || '',
 			relations: { [game.playerCharId]: initRel }
 		};
 		newCharObj.avatar = buildAvatarUrl(newCharObj, game);
@@ -144,6 +145,7 @@ ${otherCharacters.map((c) => formatCharacterDetails(game, c, false)).join('\n\n'
       "role": "Роль",
       "personality": "Характер",
       "appearance": "Зовнішність",
+      "backstory": "Коротка передісторія: хто такий, звідки, ключові події минулого",
       "initialRelationToPlayer": 15
     }
   ] або null,
@@ -304,6 +306,7 @@ ${formatRecentHistory(game, 8)}
       "role": "Роль (наприклад: Головоріз, Вартовий, Торговець)",
       "personality": "Характер",
       "appearance": "Зовнішність",
+      "backstory": "Коротка передісторія: хто такий, звідки, ключові події минулого",
       "initialRelationToPlayer": 15
     }
   ] або null,

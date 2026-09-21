@@ -238,9 +238,7 @@
 		{/if}
 
 		<div class="form-group">
-			<label for="char_{char.id}_personality"
-				>Характер (Ключовий для ШІ)</label
-			><br />
+			<label for="char_{char.id}_personality">Характер</label><br />
 			<textarea
 				id="char_{char.id}_personality"
 				rows="5"
@@ -270,7 +268,7 @@
 		</div>
 
 		<div class="form-group">
-			<label for="char_{char.id}_backstory">📖 Історія (враховується ШІ)</label><br />
+			<label for="char_{char.id}_backstory">📖 Історія</label><br />
 			<textarea
 				id="char_{char.id}_backstory"
 				rows="6"
