@@ -475,6 +475,13 @@ export async function sendMessage(
 		});
 	}
 
+	// Remove stateSnapshot from all previous player messages — keep it only on the latest one
+	for (const msg of _currentGame.messages) {
+		if (msg.type === 'user' && msg.stateSnapshot) {
+			delete msg.stateSnapshot;
+		}
+	}
+
 	const stateSnapshot = captureWorldStateSnapshot(_currentGame);
 	_currentGame.messages.push({ type: 'user', text, stateSnapshot });
 	_currentGame = { ..._currentGame };
