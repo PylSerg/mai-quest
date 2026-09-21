@@ -5,9 +5,10 @@
 		title: string;
 		day: number;
 		timeOfDay: string;
+		locationName?: string;
 		onToggleSidebar: () => void;
 	}
-	let { title, day, timeOfDay, onToggleSidebar }: Props = $props();
+	let { title, day, timeOfDay, locationName, onToggleSidebar }: Props = $props();
 </script>
 
 <div class="chat-header">
@@ -17,6 +18,9 @@
 			onclick={onToggleSidebar}
 			title="Меню">☰</button
 		>
+		{#if locationName}
+			<span class="location-name" title="Поточна локація">📍 {locationName}</span>
+		{/if}
 	</div>
 	<div class="header-actions">
 		<span class="header-badge" title="Поточний день">День {day}</span>
@@ -49,6 +53,15 @@
 		gap: 12px;
 		min-width: 0;
 		flex: 1;
+		overflow: hidden;
+	}
+	.location-name {
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--text-color);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 	.header-actions {
 		display: flex;

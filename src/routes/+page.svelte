@@ -91,6 +91,7 @@
 		title={gameState.currentGame?.title || "Оберіть або створіть гру"}
 		day={gameState.currentGame?.day || 1}
 		timeOfDay={gameState.currentGame?.timeOfDay || "День"}
+		locationName={gameState.currentGame?.locationName || gameState.currentGame?.location}
 		onToggleSidebar={toggleSidebar}
 	/>
 
