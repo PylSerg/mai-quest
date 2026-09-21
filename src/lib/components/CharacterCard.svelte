@@ -270,6 +270,21 @@
 		</div>
 
 		<div class="form-group">
+			<label for="char_{char.id}_backstory">📖 Історія (враховується ШІ)</label><br />
+			<textarea
+				id="char_{char.id}_backstory"
+				rows="6"
+				placeholder="Минуле, ключові події, таємниці, мотиви..."
+				onchange={(e) =>
+					updateCharData(
+						char.id,
+						"backstory",
+						(e.target as HTMLTextAreaElement).value,
+					)}>{char.backstory || ""}</textarea
+			>
+		</div>
+
+		<div class="form-group">
 			<label for="char_{char.id}_avatar">Аватар</label><br />
 			<div class="row">
 				<input

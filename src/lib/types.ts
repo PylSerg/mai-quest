@@ -8,6 +8,7 @@ export interface Character {
 	role: string;
 	personality: string;
 	appearance: string;
+	backstory?: string;
 	avatar?: string;
 	relations: Record<string, number>;
 	initialRelationToPlayer?: number;

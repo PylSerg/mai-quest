@@ -30,7 +30,7 @@ export function formatCharacterDetails(game: Game, c: Character, isPlayer = fals
   - Вік: ${c.age || 'Невідомий'}
   - Роль / фах: ${c.role || 'Невідомо'}
   - ХАРАКТЕР (НАЙВИЩИЙ ПРІОРИТЕТ): ${c.personality || 'Звичайний'}
-  - Зовнішність та спорядження: ${c.appearance || 'Звичайна'}${relText}`;
+  - Зовнішність та спорядження: ${c.appearance || 'Звичайна'}${c.backstory ? `\n  - ІСТОРІЯ / ПЕРЕДІСТОРІЯ (враховуй у поведінці та репліках): ${c.backstory}` : ''}${relText}`;
 }
 
 export function formatRecentHistory(game: Game, maxMessages = 10): string {
