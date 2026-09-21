@@ -128,6 +128,27 @@ export async function loadGameById(id: number): Promise<void> {
 	if (found) {
 		_currentGame = normalizeGame(found);
 		saveLastActiveGameId(id);
+
+		// auto-respond if last message is from user
+		if (
+			_currentGame.isStarted &&
+			_currentGame.messages.length > 0 &&
+			_currentGame.messages[_currentGame.messages.length - 1].type === 'user'
+		) {
+			const apiKey = localStorage.getItem('gemini_api_key') || '';
+			const model = localStorage.getItem('gemini_selected_model') || 'gemini-3.5-flash-lite';
+			if (apiKey) {
+				_isGenerating = true;
+				_statusText = 'Gemini створює відповідь...';
+				try {
+					const lastText = _currentGame.messages[_currentGame.messages.length - 1].text;
+					await callGemini(_currentGame, lastText, apiKey, model, _pendingNewCharIds);
+					_currentGame = { ..._currentGame };
+				} finally {
+					_isGenerating = false;
+				}
+			}
+		}
 	}
 }
 
