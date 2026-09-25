@@ -1,8 +1,9 @@
 <script lang="ts">
 	import type { Game, Character } from "$lib/types";
 	import AvatarWrap from "./AvatarWrap.svelte";
+	import AvatarCropModal from "./AvatarCropModal.svelte";
 	import RelBadge from "./RelBadge.svelte";
-	import { FALLBACK_AVATAR, buildAvatarUrl } from "$lib/services/avatar";
+	import { FALLBACK_AVATAR } from "$lib/services/avatar";
 	import {
 		getRelation,
 		getRelClass,
@@ -17,6 +18,8 @@
 		uploadAvatarFile,
 		gameState,
 	} from "$lib/stores/game.svelte";
+
+	let cropSrc = $state<string | null>(null);
 
 	interface Props {
 		char: Character;
@@ -55,10 +58,23 @@
 		const input = e.target as HTMLInputElement;
 		if (input.files?.[0]) {
 			const reader = new FileReader();
-			reader.onload = (ev) =>
-				uploadAvatarFile(char.id, ev.target!.result as string);
+			reader.onload = (ev) => {
+				// Open crop editor instead of saving directly
+				cropSrc = ev.target!.result as string;
+			};
 			reader.readAsDataURL(input.files[0]);
 		}
+		// Reset input so same file can be re-selected
+		input.value = '';
+	}
+
+	function handleCropConfirm(dataUrl: string) {
+		cropSrc = null;
+		uploadAvatarFile(char.id, dataUrl);
+	}
+
+	function handleCropCancel() {
+		cropSrc = null;
 	}
 
 	function handleGenerateAvatar() {
@@ -77,7 +93,11 @@
 
 <details class="char-details">
 	<summary>
-		<AvatarWrap src={char.avatar || FALLBACK_AVATAR} size="28px" />
+		<AvatarWrap
+			src={char.avatar || FALLBACK_AVATAR}
+			size="28px"
+			charName={`${char.name || ''} ${char.surname || ''}`.trim() || 'Персонаж'}
+		/>
 		<span class="char-summary-name"
 			>{char.name || ""} {char.surname || ""}</span
 		>
@@ -327,6 +347,10 @@
 		</div>
 	</div>
 </details>
+
+{#if cropSrc}
+	<AvatarCropModal src={cropSrc} onConfirm={handleCropConfirm} onCancel={handleCropCancel} />
+{/if}
 
 <style>
 	.char-details {

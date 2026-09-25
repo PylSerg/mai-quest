@@ -31,7 +31,10 @@
 
 <div class="message character" data-msg-idx={msgIdx}>
 	<div class="char-header">
-		<AvatarWrap src={(char as { avatar?: string }).avatar || FALLBACK_AVATAR} />
+		<AvatarWrap
+			src={(char as { avatar?: string }).avatar || FALLBACK_AVATAR}
+			charName={`${char.name || ''} ${char.surname || ''}`.trim() || 'Персонаж'}
+		/>
 		<span class="char-name">{char.name || ''} {char.surname || ''}</span>
 		{#if !isPlayer}
 			<RelBadge rel={relToPlayer()} />
