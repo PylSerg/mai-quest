@@ -2,21 +2,37 @@
 	import { pwaInfo } from "virtual:pwa-info";
 	import { onMount } from "svelte";
 	import favicon from "$lib/assets/favicon.svg";
+	import NotificationToastContainer from "$lib/components/NotificationToastContainer.svelte";
+	import { reportError } from "$lib/stores/notifications.svelte";
 	import "../app.css";
 
 	let { children } = $props();
 
-	onMount(async () => {
+	onMount(() => {
+		const handleError = (event: ErrorEvent) => {
+			console.error("Global window error:", event.error || event.message);
+			reportError(event.error || event.message, { title: "Помилка виконання" });
+		};
+
+		const handleRejection = (event: PromiseRejectionEvent) => {
+			console.error("Unhandled promise rejection:", event.reason);
+			reportError(event.reason, { title: "Неперехоплена помилка" });
+		};
+
+		window.addEventListener("error", handleError);
+		window.addEventListener("unhandledrejection", handleRejection);
+
 		if (pwaInfo) {
-			const { registerSW } = await import("virtual:pwa-register");
-			registerSW({
-				immediate: true,
-				onRegistered(r) {
-					console.log("SW Registered:", r);
-				},
-				onRegisterError(error) {
-					console.log("SW Registration error:", error);
-				},
+			import("virtual:pwa-register").then(({ registerSW }) => {
+				registerSW({
+					immediate: true,
+					onRegistered(r) {
+						console.log("SW Registered:", r);
+					},
+					onRegisterError(error) {
+						console.log("SW Registration error:", error);
+					},
+				});
 			});
 		}
 
@@ -29,6 +45,11 @@
 				setTimeout(() => splash.remove(), 400);
 			}, 300);
 		}
+
+		return () => {
+			window.removeEventListener("error", handleError);
+			window.removeEventListener("unhandledrejection", handleRejection);
+		};
 	});
 
 	let webManifestLink = pwaInfo ? pwaInfo.webManifest : "";
@@ -41,3 +62,5 @@
 </svelte:head>
 
 {@render children()}
+
+<NotificationToastContainer />

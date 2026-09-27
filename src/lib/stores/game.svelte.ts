@@ -10,6 +10,7 @@ import {
 } from '../services/gemini';
 import { captureWorldStateSnapshot, restoreWorldStateSnapshot, deepClone } from '../utils/snapshot';
 import { setRelation } from '../utils/relations';
+import { reportError, clearChatError } from './notifications.svelte';
 
 export const SCENARIOS_PRESETS = [
 	{
@@ -144,6 +145,12 @@ export async function loadGameById(id: number): Promise<void> {
 					const lastText = _currentGame.messages[_currentGame.messages.length - 1].text;
 					await callGemini(_currentGame, lastText, apiKey, model, _pendingNewCharIds);
 					_currentGame = { ..._currentGame };
+					clearChatError();
+				} catch (err) {
+					reportError(err, {
+						title: 'Помилка авто-відповіді',
+						retry: () => retryLastTurn(apiKey, model)
+					});
 				} finally {
 					_isGenerating = false;
 				}
@@ -185,8 +192,13 @@ export async function createNewGame(
 		_statusText = 'Створення світу та персонажів...';
 		try {
 			gameData = await callGeminiCreateWorld(title, apiKey, model);
+			clearChatError();
 		} catch (err) {
 			console.error('AI error, using fallback preset', err);
+			reportError(err, {
+				title: 'Помилка генерації світу (AI)',
+				retry: () => createNewGame(title, apiKey, model)
+			});
 		} finally {
 			_isGenerating = false;
 		}
@@ -497,6 +509,14 @@ export async function sendMessage(
 	}
 
 	// Remove stateSnapshot from all previous player messages — keep it only on the latest one
+	if (!apiKey || !apiKey.trim()) {
+		reportError(
+			new Error('Не вказано Gemini API Key. Будь ласка, введіть API ключ у бічному меню зліва.'),
+			{ title: 'Відсутній API Key' }
+		);
+		return;
+	}
+
 	for (const msg of _currentGame.messages) {
 		if (msg.type === 'user' && msg.stateSnapshot) {
 			delete msg.stateSnapshot;
@@ -513,6 +533,50 @@ export async function sendMessage(
 	try {
 		await callGemini(_currentGame, text, apiKey, model, _pendingNewCharIds);
 		_currentGame = { ..._currentGame };
+		clearChatError();
+	} catch (err) {
+		reportError(err, {
+			title: 'Помилка генерації ходу',
+			retry: () => retryLastTurn(apiKey, model)
+		});
+	} finally {
+		_isGenerating = false;
+	}
+}
+
+export async function retryLastTurn(apiKey: string, model: string): Promise<void> {
+	if (!_currentGame || _isGenerating) return;
+	if (!apiKey || !apiKey.trim()) {
+		reportError(
+			new Error('Не вказано Gemini API Key. Будь ласка, введіть API ключ у бічному меню зліва.'),
+			{ title: 'Відсутній API Key' }
+		);
+		return;
+	}
+
+	_isGenerating = true;
+	_statusText = 'Повторна спроба генерації...';
+	try {
+		let lastUserText = '';
+		for (let i = _currentGame.messages.length - 1; i >= 0; i--) {
+			if (_currentGame.messages[i].type === 'user') {
+				lastUserText = _currentGame.messages[i].text;
+				break;
+			}
+		}
+
+		if (lastUserText) {
+			await callGemini(_currentGame, lastUserText, apiKey, model, _pendingNewCharIds);
+		} else {
+			await callGemini(_currentGame, 'Продовжуй події далі...', apiKey, model, _pendingNewCharIds);
+		}
+		_currentGame = { ..._currentGame };
+		clearChatError();
+	} catch (err) {
+		reportError(err, {
+			title: 'Помилка повторної спроби',
+			retry: () => retryLastTurn(apiKey, model)
+		});
 	} finally {
 		_isGenerating = false;
 	}
@@ -520,6 +584,13 @@ export async function sendMessage(
 
 export async function triggerContinue(apiKey: string, model: string): Promise<void> {
 	if (!_currentGame || _isGenerating) return;
+	if (!apiKey || !apiKey.trim()) {
+		reportError(
+			new Error('Не вказано Gemini API Key. Будь ласка, введіть API ключ у бічному меню зліва.'),
+			{ title: 'Відсутній API Key' }
+		);
+		return;
+	}
 
 	if (_currentGame.pendingDayTransition && _currentGame.timeOfDay === 'Ранок') {
 		_currentGame.day = (_currentGame.day || 1) + 1;
@@ -533,6 +604,12 @@ export async function triggerContinue(apiKey: string, model: string): Promise<vo
 	try {
 		await callGemini(_currentGame, 'Продовжуй події далі...', apiKey, model, _pendingNewCharIds);
 		_currentGame = { ..._currentGame };
+		clearChatError();
+	} catch (err) {
+		reportError(err, {
+			title: 'Помилка продовження гри',
+			retry: () => triggerContinue(apiKey, model)
+		});
 	} finally {
 		_isGenerating = false;
 	}
@@ -540,6 +617,13 @@ export async function triggerContinue(apiKey: string, model: string): Promise<vo
 
 export async function triggerOptions(apiKey: string, model: string): Promise<void> {
 	if (!_currentGame || _isGenerating) return;
+	if (!apiKey || !apiKey.trim()) {
+		reportError(
+			new Error('Не вказано Gemini API Key. Будь ласка, введіть API ключ у бічному меню зліва.'),
+			{ title: 'Відсутній API Key' }
+		);
+		return;
+	}
 
 	if (_currentOptions.length > 0) {
 		_currentOptions = [];
@@ -550,8 +634,13 @@ export async function triggerOptions(apiKey: string, model: string): Promise<voi
 	_statusText = 'Генерація 5 варіантів дій...';
 	try {
 		_currentOptions = await callGeminiOptions(_currentGame, apiKey, model);
+		clearChatError();
 	} catch (e) {
 		console.error(e);
+		reportError(e, {
+			title: 'Помилка отримання варіантів дій',
+			retry: () => triggerOptions(apiKey, model)
+		});
 	} finally {
 		_isGenerating = false;
 	}
@@ -559,12 +648,25 @@ export async function triggerOptions(apiKey: string, model: string): Promise<voi
 
 export async function handleStartGame(apiKey: string, model: string): Promise<void> {
 	if (!_currentGame || _isGenerating) return;
+	if (!apiKey || !apiKey.trim()) {
+		reportError(
+			new Error('Не вказано Gemini API Key. Будь ласка, введіть API ключ у бічному меню зліва.'),
+			{ title: 'Відсутній API Key' }
+		);
+		return;
+	}
 
 	_isGenerating = true;
 	_statusText = 'Генерація старту пригоди...';
 	try {
 		await callGeminiStart(_currentGame, apiKey, model, _pendingNewCharIds);
 		_currentGame = { ..._currentGame };
+		clearChatError();
+	} catch (err) {
+		reportError(err, {
+			title: 'Помилка старту гри',
+			retry: () => handleStartGame(apiKey, model)
+		});
 	} finally {
 		_isGenerating = false;
 	}
@@ -604,10 +706,17 @@ export async function importGame(fileContent: string): Promise<void> {
 		const model = localStorage.getItem('gemini_selected_model') || 'gemini-3.5-flash-lite';
 		if (apiKey) {
 			_isGenerating = true;
+			_statusText = 'Gemini створює відповідь...';
 			try {
 				const lastText = _currentGame.messages[_currentGame.messages.length - 1].text;
 				await callGemini(_currentGame, lastText, apiKey, model, _pendingNewCharIds);
 				_currentGame = { ..._currentGame };
+				clearChatError();
+			} catch (err) {
+				reportError(err, {
+					title: 'Помилка авто-відповіді',
+					retry: () => retryLastTurn(apiKey, model)
+				});
 			} finally {
 				_isGenerating = false;
 			}

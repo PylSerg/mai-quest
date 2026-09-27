@@ -20,6 +20,7 @@
 	import Sidebar from "$lib/components/Sidebar.svelte";
 	import ChatHeader from "$lib/components/ChatHeader.svelte";
 	import ChatMessages from "$lib/components/ChatMessages.svelte";
+	import ChatErrorBanner from "$lib/components/ChatErrorBanner.svelte";
 	import InputArea from "$lib/components/InputArea.svelte";
 
 	let inputAreaComponent: ReturnType<typeof InputArea> | null = $state(null);
@@ -64,6 +65,7 @@
 			"Введіть назву нової пригоди:",
 			defaultPreset.title,
 		);
+		if (title === null) return;
 		const effectiveTitle = title?.trim() || defaultPreset.title;
 		await createNewGame(
 			effectiveTitle,
@@ -107,6 +109,8 @@
 			onSelectOption={handleSelectOption}
 			bind:scrollRef
 		/>
+
+		<ChatErrorBanner />
 
 		<InputArea
 			bind:this={inputAreaComponent}

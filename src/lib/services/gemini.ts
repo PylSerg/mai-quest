@@ -91,6 +91,166 @@ function addNewLocationsFromResult(game: Game, newLocations: unknown[]) {
 	});
 }
 
+export class GeminiApiError extends Error {
+	status?: number;
+	statusText?: string;
+	details?: string;
+	model?: string;
+
+	constructor(
+		message: string,
+		options?: { status?: number; statusText?: string; details?: string; model?: string }
+	) {
+		super(message);
+		this.name = 'GeminiApiError';
+		this.status = options?.status;
+		this.statusText = options?.statusText;
+		this.details = options?.details;
+		this.model = options?.model;
+	}
+}
+
+export async function requestGeminiContent<T = any>(
+	model: string,
+	apiKey: string,
+	systemOrUserPrompt: string,
+	isJson = true
+): Promise<T> {
+	if (!apiKey || !apiKey.trim()) {
+		throw new GeminiApiError(
+			'Не вказано Gemini API Key. Будь ласка, введіть API ключ у бічному меню зліва.',
+			{ status: 401, model }
+		);
+	}
+
+	let response: Response;
+	try {
+		response = await fetch(
+			`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`,
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					contents: [{ role: 'user', parts: [{ text: systemOrUserPrompt }] }],
+					generationConfig: isJson ? { responseMimeType: 'application/json' } : undefined
+				})
+			}
+		);
+	} catch (networkErr: any) {
+		throw new GeminiApiError(
+			`Помилка мережі при запиті до Gemini: не вдалося встановити зв'язок (${networkErr?.message || 'Failed to fetch'}). Перевірте інтернет-з'єднання.`,
+			{ status: 0, details: String(networkErr), model }
+		);
+	}
+
+	if (!response.ok) {
+		let rawDetails = '';
+		let apiMessage = '';
+		try {
+			const errJson = await response.json();
+			if (errJson?.error) {
+				apiMessage = errJson.error.message || '';
+				rawDetails =
+					typeof errJson.error === 'object'
+						? JSON.stringify(errJson.error, null, 2)
+						: String(errJson.error);
+			} else {
+				rawDetails = JSON.stringify(errJson);
+			}
+		} catch {
+			try {
+				rawDetails = await response.text();
+			} catch {
+				// ignore
+			}
+		}
+
+		let friendlyMessage = `Помилка Gemini API (HTTP ${response.status}): ${response.statusText}`;
+
+		if (response.status === 503) {
+			friendlyMessage = `Сервер Gemini перевантажений (HTTP 503 Service Unavailable). Модель "${model}" наразі має занадто велике навантаження. Зачекайте декілька секунд і спробуйте знову.`;
+		} else if (response.status === 429) {
+			friendlyMessage = `Вичерпано квоту або ліміт запитів Gemini API (HTTP 429 Too Many Requests). Зачекайте хвилину або оберіть іншу модель у бічному меню.`;
+		} else if (response.status === 400 || response.status === 401 || response.status === 403) {
+			friendlyMessage = `Помилка доступу до Gemini (HTTP ${response.status}): недійсний API Key або недостатньо дозволів. Перевірте правильність ключа у бічному меню.`;
+		} else if (response.status === 404) {
+			friendlyMessage = `Модель "${model}" не знайдена в Gemini API (HTTP 404). Оберіть підтримувану модель у налаштуваннях.`;
+		} else if (response.status >= 500) {
+			friendlyMessage = `Сервер Google повернув помилку ${response.status}. Тимчасовий збій сервісу. Спробуйте пізніше.`;
+		}
+
+		if (apiMessage) {
+			friendlyMessage += `\nПовідомлення Google: ${apiMessage}`;
+		}
+
+		throw new GeminiApiError(friendlyMessage, {
+			status: response.status,
+			statusText: response.statusText,
+			details: rawDetails || apiMessage || response.statusText,
+			model
+		});
+	}
+
+	let data: any;
+	try {
+		data = await response.json();
+	} catch (err: any) {
+		throw new GeminiApiError(
+			`Не вдалося розібрати відповідь від сервера Gemini як JSON: ${err?.message || err}`,
+			{ status: 200, details: String(err), model }
+		);
+	}
+
+	if (!data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
+		const blockReason = data.promptFeedback?.blockReason;
+		if (blockReason) {
+			throw new GeminiApiError(
+				`Відповідь Gemini заблоковано фільтром безпеки (${blockReason}). Спробуйте змінити опис або запит.`,
+				{ status: 400, details: JSON.stringify(data.promptFeedback), model }
+			);
+		}
+		throw new GeminiApiError(
+			'Gemini повернув порожню відповідь (жодного варіанту відповіді не згенеровано). Спробуйте ще раз.',
+			{ status: 200, details: JSON.stringify(data), model }
+		);
+	}
+
+	const candidate = data.candidates[0];
+	if (candidate.finishReason === 'SAFETY') {
+		throw new GeminiApiError(
+			'Відповідь моделі заблоковано через політику безпеки Google (finishReason: SAFETY).',
+			{ status: 400, details: JSON.stringify(candidate.safetyRatings || {}), model }
+		);
+	}
+
+	const rawText = candidate.content?.parts?.[0]?.text;
+	if (typeof rawText !== 'string' || !rawText.trim()) {
+		throw new GeminiApiError(
+			`Gemini повернув порожній текст (finishReason: ${candidate.finishReason || 'невідомо'}).`,
+			{ status: 200, details: JSON.stringify(candidate), model }
+		);
+	}
+
+	if (isJson) {
+		let clean = rawText.trim();
+		if (clean.startsWith('```json')) {
+			clean = clean.replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+		} else if (clean.startsWith('```')) {
+			clean = clean.replace(/^```\s*/, '').replace(/```\s*$/, '');
+		}
+		try {
+			return JSON.parse(clean.trim());
+		} catch (parseErr: any) {
+			throw new GeminiApiError(
+				`Помилка структури JSON у відповіді Gemini: ${parseErr?.message || parseErr}.\nПочаток відповіді: ${clean.slice(0, 160)}...`,
+				{ status: 200, details: clean, model }
+			);
+		}
+	}
+
+	return rawText as unknown as T;
+}
+
 export async function callGeminiStart(
 	game: Game,
 	apiKey: string,
@@ -161,20 +321,7 @@ ${otherCharacters.map((c) => formatCharacterDetails(game, c, false)).join('\n\n'
   "newTimeOfDay": "Ранок або День або Вечір або Ніч або null"
 }`;
 
-	const response = await fetch(
-		`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-		{
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-				generationConfig: { responseMimeType: 'application/json' }
-			})
-		}
-	);
-	if (!response.ok) throw new Error('HTTP ' + response.status);
-	const data = await response.json();
-	const result = JSON.parse(data.candidates[0].content.parts[0].text);
+	const result = await requestGeminiContent<any>(model, apiKey, systemPrompt, true);
 
 	const openingMessageStartIndex = game.messages.length;
 
@@ -324,20 +471,7 @@ ${formatRecentHistory(game, 8)}
   "updatedObjectives": "Оновлені цілі або null"
 }`;
 
-	const response = await fetch(
-		`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-		{
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-				generationConfig: { responseMimeType: 'application/json' }
-			})
-		}
-	);
-	if (!response.ok) throw new Error('HTTP ' + response.status);
-	const data = await response.json();
-	const result = JSON.parse(data.candidates[0].content.parts[0].text);
+	const result = await requestGeminiContent<any>(model, apiKey, systemPrompt, true);
 	const responseMessageStartIndex = game.messages.length;
 
 	// Add new characters
@@ -501,20 +635,12 @@ ${formatRecentHistory(game, 5)}
 
 Поверни JSON: { "options": ["варіант 1 від першої особи", "варіант 2 від першої особи", "варіант 3 від першої особи", "варіант 4 від першої особи", "варіант 5 від першої особи"] }`;
 
-	const res = await fetch(
-		`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-		{
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				contents: [{ role: 'user', parts: [{ text: promptText }] }],
-				generationConfig: { responseMimeType: 'application/json' }
-			})
-		}
+	const result = await requestGeminiContent<{ options: string[] }>(
+		model,
+		apiKey,
+		promptText,
+		true
 	);
-	if (!res.ok) throw new Error('HTTP ' + res.status);
-	const data = await res.json();
-	const result = JSON.parse(data.candidates[0].content.parts[0].text);
 	return result.options || [];
 }
 
@@ -532,18 +658,5 @@ export async function callGeminiCreateWorld(
     }
     Зовнішність персонажів має відповідати setting (одяг, зброя, деталі епохи).`;
 
-	const res = await fetch(
-		`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-		{
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				contents: [{ role: 'user', parts: [{ text: promptGen }] }],
-				generationConfig: { responseMimeType: 'application/json' }
-			})
-		}
-	);
-	if (!res.ok) return null;
-	const data = await res.json();
-	return JSON.parse(data.candidates[0].content.parts[0].text);
+	return await requestGeminiContent<Record<string, unknown>>(model, apiKey, promptGen, true);
 }

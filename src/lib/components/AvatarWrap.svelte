@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { FALLBACK_AVATAR } from '$lib/services/avatar';
-	import AvatarLightbox from './AvatarLightbox.svelte';
+	import { FALLBACK_AVATAR } from "$lib/services/avatar";
+	import AvatarLightbox from "./AvatarLightbox.svelte";
 
 	interface Props {
 		src?: string;
@@ -8,7 +8,12 @@
 		charName?: string;
 		clickable?: boolean;
 	}
-	let { src = FALLBACK_AVATAR, size = '36px', charName = 'Персонаж', clickable = true }: Props = $props();
+	let {
+		src = FALLBACK_AVATAR,
+		size = "36px",
+		charName = "Персонаж",
+		clickable = true,
+	}: Props = $props();
 
 	let loading = $state(true);
 	let failed = $state(false);
@@ -20,7 +25,9 @@
 		failed = false;
 	});
 
-	const displaySrc = $derived(failed ? FALLBACK_AVATAR : (src || FALLBACK_AVATAR));
+	const displaySrc = $derived(
+		failed ? FALLBACK_AVATAR : src || FALLBACK_AVATAR,
+	);
 	const isFallback = $derived(displaySrc === FALLBACK_AVATAR);
 
 	function handleClick() {
@@ -30,13 +37,13 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
-		if ((e.key === 'Enter' || e.key === ' ') && clickable && !isFallback) {
+		if ((e.key === "Enter" || e.key === " ") && clickable && !isFallback) {
 			showLightbox = true;
 		}
 	}
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <span
 	class="avatar-wrap"
 	class:loading
@@ -44,10 +51,14 @@
 	style="width:{size};height:{size}"
 	onclick={handleClick}
 	onkeydown={handleKeydown}
-	role={clickable && !isFallback ? 'button' : undefined}
+	role={clickable && !isFallback ? "button" : undefined}
 	tabindex={clickable && !isFallback ? 0 : undefined}
-	aria-label={clickable && !isFallback ? `Відкрити аватар ${charName}` : undefined}
-	title={clickable && !isFallback ? `Переглянути аватар ${charName}` : undefined}
+	aria-label={clickable && !isFallback
+		? `Відкрити аватар ${charName}`
+		: undefined}
+	title={clickable && !isFallback
+		? `Переглянути аватар ${charName}`
+		: undefined}
 >
 	<span class="avatar-spinner"></span>
 	<img
@@ -64,7 +75,11 @@
 </span>
 
 {#if showLightbox}
-	<AvatarLightbox src={displaySrc} {charName} onClose={() => (showLightbox = false)} />
+	<AvatarLightbox
+		src={displaySrc}
+		{charName}
+		onClose={() => (showLightbox = false)}
+	/>
 {/if}
 
 <style>
@@ -92,7 +107,11 @@
 		background: #333;
 		border: 2px solid var(--accent-color);
 		opacity: 1;
-		transition: opacity 0.2s ease, transform 0.2s ease, filter 0.2s ease, border-color 0.2s ease;
+		transition:
+			opacity 0.2s ease,
+			transform 0.2s ease,
+			filter 0.2s ease,
+			border-color 0.2s ease;
 	}
 	.avatar-wrap.loading .char-avatar {
 		opacity: 0;

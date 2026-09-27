@@ -13,6 +13,7 @@
 		toggleTheme,
 		toggleSidebarHeader,
 	} from "$lib/stores/ui.svelte";
+	import { reportError } from "$lib/stores/notifications.svelte";
 
 	let fileInputRef: HTMLInputElement | null = $state(null);
 
@@ -22,6 +23,7 @@
 			"Введіть назву нової пригоди:",
 			defaultPreset.title,
 		);
+		if (title === null) return;
 		const effectiveTitle = title?.trim() || defaultPreset.title;
 		await createNewGame(
 			effectiveTitle,
@@ -33,7 +35,11 @@
 	async function handleDeleteCurrentGame() {
 		if (!gameState.currentGame) return;
 		if (confirm(`Видалити гру "${gameState.currentGame.title}"?`)) {
-			await deleteCurrentGame();
+			try {
+				await deleteCurrentGame();
+			} catch (err) {
+				reportError(err, { title: "Помилка видалення гри" });
+			}
 		}
 	}
 
@@ -48,7 +54,7 @@
 				const content = ev.target?.result as string;
 				await importGame(content);
 			} catch (err) {
-				alert("Помилка читання JSON файлу");
+				reportError(err, { title: "Помилка читання JSON файлу" });
 				console.error(err);
 			}
 			target.value = "";
@@ -60,7 +66,11 @@
 		const select = e.target as HTMLSelectElement;
 		const id = parseInt(select.value);
 		if (id) {
-			await loadGameById(id);
+			try {
+				await loadGameById(id);
+			} catch (err) {
+				reportError(err, { title: "Помилка завантаження гри" });
+			}
 		}
 	}
 </script>
